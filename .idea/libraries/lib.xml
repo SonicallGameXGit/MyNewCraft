@@ -1,0 +1,31 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/libs/JOML" />
+      <root url="file://$PROJECT_DIR$/libs/LWJGL" />
+      <root url="file://$PROJECT_DIR$/libs/NOISE" />
+      <root url="file://$PROJECT_DIR$/libs/SLICK" />
+      <root url="file://$PROJECT_DIR$/libs/LOG4J" />
+      <root url="file://$PROJECT_DIR$/libs/LOG4J" />
+      <root url="file://$PROJECT_DIR$/libs/GSON" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/libs/JOML" />
+      <root url="file://$PROJECT_DIR$/libs/LWJGL" />
+      <root url="file://$PROJECT_DIR$/libs/LOG4J" />
+      <root url="file://$PROJECT_DIR$/libs/LOG4J" />
+    </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/libs/GSON" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/JOML" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/LWJGL" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/NOISE" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/SLICK" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/JOML" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/LWJGL" recursive="false" type="SOURCES" />
+  </library>
+</component>
