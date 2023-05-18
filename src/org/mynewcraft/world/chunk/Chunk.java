@@ -4,6 +4,7 @@ import com.flowpowered.noise.Noise;
 import com.flowpowered.noise.NoiseQuality;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
+import org.mynewcraft.engine.math.MathUtil;
 import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.block.Blocks;
 
@@ -14,18 +15,25 @@ public class Chunk {
     private final long SEED;
     private final Map<Vector3i, AbstractBlock> BLOCKS = new HashMap<>();
 
-    public Chunk(Vector2i offset, int seed) {
+    public Chunk(Vector2i offset, long seed) {
         OFFSET = offset;
         SEED = seed;
 
         for(int x = 0; x < 16; x++) {
             for(int z = 0; z < 16; z++) {
-                double height = Noise.valueCoherentNoise3D(x / 64.0, 0, z / 64.0, seed, NoiseQuality.FAST) * 64.0 + 64.0;
+                int ox = offset.x() * 16 + x;
+                int oz = offset.y() * 16 + z;
+
+                double mountainsHeight = Noise.gradientCoherentNoise3D(ox / 64.0, 0, oz / 64.0, (int) seed, NoiseQuality.FAST) * 64.0 + 72.0;
+                mountainsHeight += Noise.gradientCoherentNoise3D(ox / 32.0, 0, oz / 32.0, (int) seed, NoiseQuality.FAST) * 16.0;
+                mountainsHeight += Noise.gradientCoherentNoise3D(ox / 16.0, 0, oz / 16.0, (int) seed, NoiseQuality.FAST) * 4.0;
+                double plainsHeight = Noise.gradientCoherentNoise3D(ox / 72.0, 0, oz / 72.0, (int) seed, NoiseQuality.FAST) * 2.0 + 64.0;
+                double height = MathUtil.smooth(mountainsHeight, plainsHeight, Noise.gradientCoherentNoise3D(ox / 256.0, 0, oz / 256.0, (int) seed, NoiseQuality.FAST));
 
                 for(int y = 1; y < height; y++) {
                     AbstractBlock block = Blocks.STONE;
 
-                    if(y >= height - new Random(seed + x * 38506L + y * 101950L).nextDouble() * 5.0 - 1.0)
+                    if(y >= height - new Random(seed + ox * 38506L + oz * 101950L).nextDouble() * 5.0 - 1.0)
                         block = Blocks.DIRT;
                     if(y >= height - 1) block = Blocks.GRASS_BLOCK;
 
@@ -35,6 +43,16 @@ public class Chunk {
                 BLOCKS.put(new Vector3i(x, 0, z), Blocks.BEDROCK);
             }
         }
+    }
+
+    public void placeBlock(Vector3i coordinate, AbstractBlock block) {
+        if(coordinate.x() >= getOffset().x() && coordinate.x() < getOffset().x() + 16)
+            if(coordinate.y() >= 0)
+                if(coordinate.z() >= getOffset().y() && coordinate.z() < getOffset().y() + 16)
+                    BLOCKS.put(coordinate, block);
+    }
+    public void removeBlock(Vector3i coordinate) {
+        BLOCKS.remove(coordinate);
     }
 
     public Map<Vector3i, AbstractBlock> getMap() {

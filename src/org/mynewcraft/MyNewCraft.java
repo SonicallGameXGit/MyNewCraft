@@ -2,11 +2,8 @@ package org.mynewcraft;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
-import org.joml.Vector3i;
-import org.mynewcraft.client.graphics.Camera;
 import org.mynewcraft.client.graphics.shader.WorldShader;
 import org.mynewcraft.client.graphics.util.BlockSelection;
 import org.mynewcraft.engine.graphics.OpenGL;
@@ -15,17 +12,13 @@ import org.mynewcraft.engine.io.Keyboard;
 import org.mynewcraft.engine.io.Mouse;
 import org.mynewcraft.engine.io.Window;
 import org.mynewcraft.engine.io.texture.Texture;
-import org.mynewcraft.engine.math.MathUtil;
 import org.mynewcraft.engine.math.physics.CubeCollider;
-import org.mynewcraft.engine.math.physics.RayHitResult;
 import org.mynewcraft.engine.time.Time;
 import org.mynewcraft.client.graphics.util.Identifier;
 import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
-import org.mynewcraft.world.block.AbstractBlock;
+import org.mynewcraft.world.World;
 import org.mynewcraft.world.block.Blocks;
-import org.mynewcraft.world.block.custom.Block;
-import org.mynewcraft.world.chunk.Chunk;
-import org.mynewcraft.world.chunk.ChunkMeshBuilder;
+import org.mynewcraft.world.entity.custom.PlayerEntity;
 
 import java.io.IOException;
 import java.util.Random;
@@ -52,12 +45,11 @@ public class MyNewCraft {
         Texture texture = AtlasGenerator.generate(new Identifier(GAME_ID, "block"));
         Blocks.register();
 
-        Chunk chunk = new Chunk(new Vector2i(), new Random().nextInt());
-        Mesh chunkMesh = ChunkMeshBuilder.build(chunk);
+        World world = new World(new Random().nextLong(), 0.4);
 
-        LOGGER.debug(chunk.getSeed());
+        LOGGER.debug("Seed: " + world.SEED);
 
-        Camera camera = new Camera(new Vector3d(0.0, 128.0, 0.0), new Vector3d());
+        PlayerEntity playerEntity = new PlayerEntity(new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 0.6, 15.0);
 
         BlockSelection selection = new BlockSelection();
 
@@ -79,20 +71,6 @@ public class MyNewCraft {
 
             fpsTimer += time.getDelta();
 
-            Vector3d direction = new Vector3d();
-
-            if(keyboard.getPress(Keyboard.KEY_W))
-                direction.add(MathUtil.angleToDirection(new Vector2d(0.0, camera.rotation.y())));
-            if(keyboard.getPress(Keyboard.KEY_S))
-                direction.add(MathUtil.angleToDirection(new Vector2d(0.0, camera.rotation.y() + 180.0)));
-            if(keyboard.getPress(Keyboard.KEY_D))
-                direction.add(MathUtil.angleToDirection(new Vector2d(0.0, camera.rotation.y() + 90.0)));
-            if(keyboard.getPress(Keyboard.KEY_A))
-                direction.add(MathUtil.angleToDirection(new Vector2d(0.0, camera.rotation.y() - 90.0)));
-            if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT))
-                direction.sub(new Vector3d(0.0, 1.0, 0.0));
-            if(keyboard.getPress(Keyboard.KEY_SPACE))
-                direction.add(new Vector3d(0.0, 1.0, 0.0));
             if(keyboard.getPress(Keyboard.KEY_F3)) {
                 if(keyboard.getClick(Keyboard.KEY_T))
                     texture = AtlasGenerator.generate(new Identifier(GAME_ID, "block"));
@@ -101,56 +79,58 @@ public class MyNewCraft {
             }
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
-            if(direction.length() > 1.0) direction.normalize();
 
-            double nearestDistance = Double.POSITIVE_INFINITY;
-            RayHitResult nearestHitResult = null;
-            AbstractBlock nearestBlock = null;
+//            double nearestDistance = Double.POSITIVE_INFINITY;
+//            RayHitResult nearestHitResult = null;
+//            AbstractBlock nearestBlock = null;
+//
+//            for(Vector3i coordinate : chunk.getCoordinates()) {
+//                RayHitResult hitResult = new CubeCollider(new Vector3d(coordinate), new Vector3d(1.0)).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
+//
+//                if(hitResult != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
+//                    nearestDistance = hitResult.hitPoint().distance(camera.position);
+//                    nearestHitResult = hitResult;
+//                    nearestBlock = chunk.getMap().get(coordinate);
+//                }
+//            }
+//
+//            if(nearestHitResult != null && nearestDistance <= 6.0) {
+//                if(mouse.getClick(Mouse.BUTTON_RIGHT)) {
+//                    Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
+//                    Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
+//                    if(!chunk.getMap().containsKey(intBlockPos)) {
+//                        chunk.getMap().put(new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z()), Blocks.COBBLESTONE);
+//                        chunkMesh = ChunkMeshBuilder.build(chunk);
+//                    }
+//                }
+//                if(mouse.getClick(Mouse.BUTTON_LEFT)) {
+//                    if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
+//                        Vector3d blockPos = nearestHitResult.hitObject().position;
+//                        chunk.getMap().remove(new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z()));
+//                        chunkMesh = ChunkMeshBuilder.build(chunk);
+//                    }
+//                }
+//
+//                selection.position = nearestHitResult.hitObject().position;
+//                selection.enabled();
+//            } else selection.disabled();
 
-            for(Vector3i coordinate : chunk.getCoordinates()) {
-                RayHitResult hitResult = new CubeCollider(new Vector3d(coordinate), new Vector3d(1.0)).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
-
-                if(hitResult != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
-                    nearestDistance = hitResult.hitPoint().distance(camera.position);
-                    nearestHitResult = hitResult;
-                    nearestBlock = chunk.getMap().get(coordinate);
-                }
-            }
-
-            if(nearestHitResult != null && nearestDistance <= 6.0) {
-                if(mouse.getClick(Mouse.BUTTON_RIGHT)) {
-                    Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
-                    Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
-                    if(!chunk.getMap().containsKey(intBlockPos)) {
-                        chunk.getMap().put(new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z()), Blocks.COBBLESTONE);
-                        chunkMesh = ChunkMeshBuilder.build(chunk);
-                    }
-                }
-                if(mouse.getClick(Mouse.BUTTON_LEFT)) {
-                    if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
-                        Vector3d blockPos = nearestHitResult.hitObject().position;
-                        chunk.getMap().remove(new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z()));
-                        chunkMesh = ChunkMeshBuilder.build(chunk);
-                    }
-                }
-
-                selection.position = nearestHitResult.hitObject().position;
-                selection.enabled();
-            } else selection.disabled();
-
-            camera.position.add(direction.mul(25.0 * time.getDelta()));
-            camera.rotation.add(new Vector3d(new Vector2d(mouse.getDirection().y(), mouse.getDirection().x()).mul(!mouse.getGrabbed() ? 0.0 : -0.05), 0.0));
+            playerEntity.update(world, keyboard, mouse, time);
 
             worldShader.load();
             worldShader.project(90.0, 0.05, 1000.0);
-            worldShader.view(camera.position, camera.rotation);
+            worldShader.view(new Vector3d(playerEntity.collider.position).add(new Vector3d(playerEntity.collider.scale.x() / 2.0, playerEntity.collider.scale.y() - 0.2, playerEntity.collider.scale.z() / 2.0)), playerEntity.rotation);
 
-            chunkMesh.load();
+            for(Vector2i key : world.CHUNK_MESHES.keySet()) {
+                Mesh chunkMesh = world.CHUNK_MESHES.get(key);
 
-            worldShader.transform(new Vector3d(chunk.getOffset().x(), 0.0, chunk.getOffset().y()), new Vector3d(), new Vector3d(1.0));
+                chunkMesh.load();
 
-            chunkMesh.render(texture);
-            chunkMesh.unload();
+                worldShader.transform(new Vector3d(key.x() * 16.0, 0.0, key.y() * 16.0), new Vector3d(), new Vector3d(1.0));
+
+                chunkMesh.render(texture);
+                chunkMesh.unload();
+            }
 
             selection.load();
 
@@ -164,7 +144,7 @@ public class MyNewCraft {
 
         LOGGER.traceExit();
 
-        chunkMesh.clear();
+        world.clear();
         worldShader.clear();
         window.close();
 
