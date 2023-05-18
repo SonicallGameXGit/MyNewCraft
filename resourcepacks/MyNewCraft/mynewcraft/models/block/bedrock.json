@@ -1,0 +1,16 @@
+{
+  "parent": "mynewcraft:block/cube_all",
+  "textures": {
+    "all": {
+      "id": "mynewcraft:block/bedrock_side"
+    },
+    "top": {
+      "id": "mynewcraft:block/bedrock_top",
+      "natural": true
+    },
+    "bottom": {
+      "id": "mynewcraft:block/bedrock_top",
+      "natural": true
+    }
+  }
+}

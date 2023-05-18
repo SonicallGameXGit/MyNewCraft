@@ -1,0 +1,16 @@
+{
+  "parent": "mynewcraft:block/cube_all",
+  "textures": {
+    "all": {
+      "id": "mynewcraft:block/grass_block_side"
+    },
+    "top": {
+      "id": "mynewcraft:block/grass_block_top",
+      "natural": true
+    },
+    "bottom": {
+      "id": "mynewcraft:block/dirt",
+      "natural": true
+    }
+  }
+}
