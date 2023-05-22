@@ -3,6 +3,7 @@ package org.mynewcraft.world.entity.custom;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
+import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.engine.io.Keyboard;
 import org.mynewcraft.engine.io.Mouse;
 import org.mynewcraft.engine.math.MathUtil;
@@ -38,24 +39,30 @@ public class PlayerEntity extends LivingEntity {
         rotation.y = rotation.y() >= 360.0 || rotation.y() <= -360.0 ? 0.0 : rotation.y();
         
         Vector3d realDirection = new Vector3d(direction).mul(speed * time.getDelta());
+        Vector3d position = new Vector3d(collider.position);
 
-        collider.position.x += realDirection.x();
-        for(Chunk chunk : world.CHUNKS.values())
-            for(Vector3i coordinate : chunk.getCoordinates())
-                if(collider.checkCollision(new CubeCollider(new Vector3d(coordinate).add(new Vector3d(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0)), new Vector3d(1.0))))
-                    collider.position.x -= realDirection.x();
+        position.x += realDirection.x();
+//        for(Chunk chunk : world.getNearChunks(new Vector2d(position.x(), position.z())))
+//            for(Vector3i coordinate : chunk.getCoordinates())
+//                if(new CubeCollider(new Vector3d(coordinate).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), new Vector3d(1.0)).checkCollision(collider))
+//                    position.x -= realDirection.x();
+
+        position.z += realDirection.z();
+//        for(Chunk chunk : world.getNearChunks(new Vector2d(position.x(), position.z())))
+//            for(Vector3i coordinate : chunk.getCoordinates())
+//                if(new CubeCollider(new Vector3d(coordinate).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), new Vector3d(1.0)).checkCollision(collider))
+//                    position.z -= realDirection.z();
 
         collider.position.y += realDirection.y();
-        for(Chunk chunk : world.CHUNKS.values())
-            for(Vector3i coordinate : chunk.getCoordinates())
-                if(collider.checkCollision(new CubeCollider(new Vector3d(coordinate).add(new Vector3d(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0)), new Vector3d(1.0))))
-                    collider.position.y -= realDirection.y();
+//        for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z())))
+//            for(Vector3i coordinate : chunk.getCoordinates())
+//                if(new CubeCollider(new Vector3d(coordinate).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), new Vector3d(1.0)).checkCollision(collider))
+//                    collider.position.y -= realDirection.y();
 
-        collider.position.z += realDirection.z();
-        for(Chunk chunk : world.CHUNKS.values())
-            for(Vector3i coordinate : chunk.getCoordinates())
-                if(collider.checkCollision(new CubeCollider(new Vector3d(coordinate).add(new Vector3d(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0)), new Vector3d(1.0))))
-                    collider.position.z -= realDirection.z();
+        collider.position.x = position.x();
+        collider.position.z = position.z();
+
+        MyNewCraft.LOGGER.debug("(" + (float) collider.position.x() + " " + (float) collider.position.y() + " " + (float) collider.position.z() + ")");
 
         update(time);
     }

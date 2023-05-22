@@ -1,5 +1,6 @@
 package org.mynewcraft.world;
 
+import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.mynewcraft.engine.graphics.mesh.Mesh;
@@ -7,7 +8,9 @@ import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.chunk.Chunk;
 import org.mynewcraft.world.chunk.ChunkMeshBuilder;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class World {
     public double gravity;
@@ -45,5 +48,18 @@ public class World {
     }
     public void clear() {
         for(Mesh chunkMesh : CHUNK_MESHES.values()) chunkMesh.clear();
+    }
+
+    public List<Chunk> getNearChunks(Vector2d position) {
+        int chunkX = (int) Math.floor(position.x() / 16.0);
+        int chunkZ = (int) Math.floor(position.y() / 16.0);
+
+        List<Chunk> chunks = new ArrayList<>();
+        for(int i = chunkX - 1; i <= chunkX + 1; i++)
+            for(int j = chunkZ - 1; j <= chunkZ + 1; j++)
+                if(CHUNKS.get(new Vector2i(i, j)) != null)
+                    chunks.add(CHUNKS.get(new Vector2i(i, j)));
+
+        return chunks;
     }
 }
