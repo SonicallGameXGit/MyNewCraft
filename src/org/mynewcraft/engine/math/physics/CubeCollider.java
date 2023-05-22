@@ -7,8 +7,8 @@ public class CubeCollider {
     public Vector3d scale;
 
     public CubeCollider(Vector3d position, Vector3d scale) {
-        this.position = position;
-        this.scale = scale;
+        this.position = new Vector3d(position);
+        this.scale = new Vector3d(scale);
     }
 
     public boolean checkCollision(CubeCollider b) {

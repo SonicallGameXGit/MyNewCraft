@@ -80,42 +80,7 @@ public class MyNewCraft {
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
 
-//            double nearestDistance = Double.POSITIVE_INFINITY;
-//            RayHitResult nearestHitResult = null;
-//            AbstractBlock nearestBlock = null;
-//
-//            for(Vector3i coordinate : chunk.getCoordinates()) {
-//                RayHitResult hitResult = new CubeCollider(new Vector3d(coordinate), new Vector3d(1.0)).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
-//
-//                if(hitResult != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
-//                    nearestDistance = hitResult.hitPoint().distance(camera.position);
-//                    nearestHitResult = hitResult;
-//                    nearestBlock = chunk.getMap().get(coordinate);
-//                }
-//            }
-//
-//            if(nearestHitResult != null && nearestDistance <= 6.0) {
-//                if(mouse.getClick(Mouse.BUTTON_RIGHT)) {
-//                    Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
-//                    Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
-//                    if(!chunk.getMap().containsKey(intBlockPos)) {
-//                        chunk.getMap().put(new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z()), Blocks.COBBLESTONE);
-//                        chunkMesh = ChunkMeshBuilder.build(chunk);
-//                    }
-//                }
-//                if(mouse.getClick(Mouse.BUTTON_LEFT)) {
-//                    if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
-//                        Vector3d blockPos = nearestHitResult.hitObject().position;
-//                        chunk.getMap().remove(new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z()));
-//                        chunkMesh = ChunkMeshBuilder.build(chunk);
-//                    }
-//                }
-//
-//                selection.position = nearestHitResult.hitObject().position;
-//                selection.enabled();
-//            } else selection.disabled();
-
-            playerEntity.update(world, keyboard, mouse, time);
+            playerEntity.update(world, selection, keyboard, mouse, time);
 
             worldShader.load();
             worldShader.project(90.0, 0.05, 1000.0);

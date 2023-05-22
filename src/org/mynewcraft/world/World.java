@@ -34,17 +34,22 @@ public class World {
     public void update() {
         // Update
     }
+    public void updateMesh(Vector2i offset) {
+        CHUNK_MESHES.replace(offset, ChunkMeshBuilder.build(CHUNKS.get(offset)));
+    }
     public void placeBlock(Vector3i coordinate, AbstractBlock block) {
         Vector2i chunkPos = new Vector2i((int) Math.floor((double) coordinate.x() / 16.0), (int) Math.floor((double) coordinate.z() / 16.0));
         Chunk chunk = CHUNKS.get(chunkPos);
 
-        if(chunk != null) chunk.placeBlock(coordinate, block);
+        Vector3i intBlockPos = new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * 16, 0, chunkPos.y() * 16));
+
+        if(chunk != null && !chunk.getMap().containsKey(intBlockPos)) chunk.placeBlock(intBlockPos, block);
     }
     public void removeBlock(Vector3i coordinate) {
         Vector2i chunkPos = new Vector2i((int) Math.floor((double) coordinate.x() / 16.0), (int) Math.floor((double) coordinate.z() / 16.0));
         Chunk chunk = CHUNKS.get(chunkPos);
 
-        if(chunk != null) chunk.removeBlock(coordinate);
+        if(chunk != null) chunk.removeBlock(new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * 16, 0, chunkPos.y() * 16)));
     }
     public void clear() {
         for(Mesh chunkMesh : CHUNK_MESHES.values()) chunkMesh.clear();
