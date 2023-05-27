@@ -8,14 +8,27 @@
       <root url="file://$PROJECT_DIR$/libs/LOG4J" />
       <root url="file://$PROJECT_DIR$/libs/LOG4J" />
       <root url="file://$PROJECT_DIR$/libs/GSON" />
+      <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+      <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+      <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+      <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+      <root url="file://$PROJECT_DIR$/libs/DISCORD" />
     </CLASSES>
     <JAVADOC />
+    <NATIVE>
+      <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+    </NATIVE>
     <SOURCES>
       <root url="file://$PROJECT_DIR$/libs/JOML" />
       <root url="file://$PROJECT_DIR$/libs/LWJGL" />
       <root url="file://$PROJECT_DIR$/libs/LOG4J" />
       <root url="file://$PROJECT_DIR$/libs/LOG4J" />
     </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/GSON" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/JOML" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" />

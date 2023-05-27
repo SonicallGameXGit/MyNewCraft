@@ -1,5 +1,9 @@
 package org.mynewcraft;
 
+import club.minnced.discord.rpc.DiscordEventHandlers;
+import club.minnced.discord.rpc.DiscordRPC;
+import club.minnced.discord.rpc.DiscordRichPresence;
+import com.sun.jna.Native;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Vector2d;
@@ -35,10 +39,25 @@ public class MyNewCraft {
 
     public static final int VIEW_DISTANCE = 16;
 
+    public static DiscordRPC discordRPC;
+    public static DiscordRichPresence discordRichPresence;
+
     private static final HashMap<Vector2i, Mesh> CHUNK_MESHES = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
+        discordRPC = (DiscordRPC) Native.loadLibrary("libs/DISCORD/discord-rpc", DiscordRPC.class);
+        discordRPC.Discord_Initialize("1112019011690037378", new DiscordEventHandlers(), true, null);
+
+        discordRichPresence = new DiscordRichPresence();
+        discordRichPresence.largeImageKey = "main-logo";
+        discordRichPresence.startTimestamp = Time.getMilliseconds();
+        discordRichPresence.details = "Exploring the world in survival mode";
+        discordRichPresence.state = null;
+
+        discordRPC.Discord_UpdatePresence(discordRichPresence);
+
         Window window = new Window(1920.0 * 1.5, 1080.0 * 1.5, "MyNewCraft", true, false, false);
+        window.setIcon("resourcepacks/" + RESOURCE_PACK + "/" + GAME_ID + "/icon.png");
 
         OpenGL.setClearColor(new Vector3d(0.25, 0.55, 1.0));
         OpenGL.cullFace(true);
@@ -87,7 +106,12 @@ public class MyNewCraft {
                     worldShader = new WorldShader(window, GAME_ID);
                     playerEntity.direction.y = 0.0;
                 }
-                if(keyboard.getClick(Keyboard.KEY_F4)) playerEntity.setGameMode(playerEntity.getGameMode() + 1);
+                if(keyboard.getClick(Keyboard.KEY_F4)) {
+                    playerEntity.setGameMode(playerEntity.getGameMode() + 1);
+
+                    discordRichPresence.details = "Exploring the world in " + playerEntity.getGameModeName(playerEntity.getGameMode()) + " mode";
+                    discordRPC.Discord_UpdatePresence(discordRichPresence);
+                }
             }
             if(keyboard.getClick(Keyboard.KEY_R)) playerEntity.collider.position.set(new Random().nextDouble(0.0, world.SPAWN_AREA), 128.0, new Random().nextDouble(0.0, world.SPAWN_AREA));
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
@@ -137,6 +161,9 @@ public class MyNewCraft {
 
             worldShader.unload();
         }
+
+        discordRPC.Discord_Shutdown();
+        discordRPC.Discord_ClearPresence();
 
         LOGGER.traceExit();
 

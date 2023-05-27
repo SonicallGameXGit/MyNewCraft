@@ -50,7 +50,7 @@ public class PlayerEntity extends LivingEntity {
 
     public void update(World world, BlockSelection selection, Keyboard keyboard, Mouse mouse, Time time) {
         direction.set(new Vector3d(0.0, (gameMode == CREATIVE_GAMEMODE && flying) || gameMode == SPECTATOR_GAMEMODE ? 0.0 : direction.y(), 0.0));
-        applyPhysics = !flying;
+        applyPhysics = !((gameMode == CREATIVE_GAMEMODE && flying) || gameMode == SPECTATOR_GAMEMODE);
 
         if(canJump) flying = false;
         if(keyboard.getPress(Keyboard.KEY_W))
@@ -83,7 +83,7 @@ public class PlayerEntity extends LivingEntity {
             direction.z = normalizedDirection.y();
         }
 
-        double withFlySpeed = speed * (flying ? flySpeedMultiplier : 1.0);
+        double withFlySpeed = speed * ((gameMode == CREATIVE_GAMEMODE && flying) || gameMode == SPECTATOR_GAMEMODE ? flySpeedMultiplier : 1.0);
 
         direction.mul(withFlySpeed, 1.0, withFlySpeed);
 
@@ -138,10 +138,13 @@ public class PlayerEntity extends LivingEntity {
     public void setGameMode(int gameMode) {
         this.gameMode = gameMode > 2 ? 0 : gameMode;
         processCollisions = gameMode != SPECTATOR_GAMEMODE;
-        flying = gameMode == SPECTATOR_GAMEMODE;
     }
 
     public int getGameMode() {
         return gameMode;
+    }
+
+    public String getGameModeName(int gameMode) {
+        return gameMode == SURVIVAL_GAMEMODE ? "survival" : gameMode == CREATIVE_GAMEMODE ? "creative" : "spectator";
     }
 }

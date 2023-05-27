@@ -13,6 +13,10 @@ public class Time {
         delta = 0.0;
     }
 
+    public static long getMilliseconds() {
+        return System.currentTimeMillis();
+    }
+
     public void update() {
         double currentTime = System.nanoTime();
 
