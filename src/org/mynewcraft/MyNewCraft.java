@@ -83,8 +83,6 @@ public class MyNewCraft {
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
 
-            LOGGER.debug(playerEntity.getGameMode());
-
             playerEntity.update(world, selection, keyboard, mouse, time);
 
             worldShader.load();
