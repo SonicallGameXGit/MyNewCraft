@@ -4,6 +4,7 @@ import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
+import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.client.graphics.Camera;
 import org.mynewcraft.client.graphics.util.BlockSelection;
 import org.mynewcraft.engine.io.Keyboard;
@@ -27,14 +28,18 @@ public class PlayerEntity extends LivingEntity {
 
     public Camera camera;
 
+    public double flySpeedMultiplier;
+
     protected int gameMode;
     protected boolean flying;
 
     private int jumpClicks;
     private long lastJumpTime;
 
-    public PlayerEntity(World world, CubeCollider collider, Vector3d rotation, double mass, double speed, double jumpPower) {
+    public PlayerEntity(World world, CubeCollider collider, Vector3d rotation, double mass, double speed, double flySpeedMultiplier, double jumpPower) {
         super(collider, rotation, mass, speed, jumpPower);
+
+        this.flySpeedMultiplier = flySpeedMultiplier;
 
         camera = new Camera(new Vector3d(collider.position.x() + collider.scale.x() / 2.0, collider.position.y + collider.scale.y() / 1.125, collider.position.z() + collider.scale.z() / 2.0), new Vector3d());
         gameMode = world.DEFAULT_GAMEMODE;
@@ -57,12 +62,12 @@ public class PlayerEntity extends LivingEntity {
         if(keyboard.getPress(Keyboard.KEY_A))
             direction.add(MathUtil.angleToDirection(new Vector2d(0.0, rotation.y() - 90.0)));
         if(gameMode == SPECTATOR_GAMEMODE) {
-            if(keyboard.getPress(Keyboard.KEY_SPACE)) direction.y += speed;
-            if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT)) direction.y -= speed;
+            if(keyboard.getPress(Keyboard.KEY_SPACE)) direction.y += speed * flySpeedMultiplier;
+            if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT)) direction.y -= speed * flySpeedMultiplier;
         } else if(gameMode == CREATIVE_GAMEMODE) {
             if(flying) {
-                if(keyboard.getPress(Keyboard.KEY_SPACE)) direction.y += speed;
-                if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT)) direction.y -= speed;
+                if(keyboard.getPress(Keyboard.KEY_SPACE)) direction.y += speed * flySpeedMultiplier;
+                if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT)) direction.y -= speed * flySpeedMultiplier;
             } else if(keyboard.getPress(Keyboard.KEY_SPACE) && canJump) jump(false);
             if(keyboard.getClick(Keyboard.KEY_SPACE)) {
                 if(jumpClicks == 0) lastJumpTime = System.currentTimeMillis();
@@ -78,7 +83,9 @@ public class PlayerEntity extends LivingEntity {
             direction.z = normalizedDirection.y();
         }
 
-        direction.mul(speed, 1.0, speed);
+        double withFlySpeed = speed * (flying ? flySpeedMultiplier : 1.0);
+
+        direction.mul(withFlySpeed, 1.0, withFlySpeed);
 
         rotation.add(new Vector3d(new Vector2d(mouse.getDirection().y(), mouse.getDirection().x()).mul(!mouse.getGrabbed() ? 0.0 : -0.05), 0.0));
         rotation.x = MathUtil.clamp(rotation.x(), -90.0, 90.0);
@@ -112,14 +119,14 @@ public class PlayerEntity extends LivingEntity {
                     Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
 
                     world.placeBlock(intBlockPos, Blocks.COBBLESTONE);
-                    world.updateMesh(new Vector2i((int) Math.floor(intBlockPos.x() / 16.0), (int) Math.floor(intBlockPos.z() / 16.0)));
+                    MyNewCraft.updateMesh(world, new Vector2i((int) Math.floor(intBlockPos.x() / 16.0), (int) Math.floor(intBlockPos.z() / 16.0)));
                 }
                 if(mouse.getClick(Mouse.BUTTON_LEFT)) {
                     if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
                         Vector3i blockPos = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
 
                         world.removeBlock(blockPos);
-                        world.updateMesh(new Vector2i((int) Math.floor(blockPos.x() / 16.0), (int) Math.floor(blockPos.z() / 16.0)));
+                        MyNewCraft.updateMesh(world, new Vector2i((int) Math.floor(blockPos.x() / 16.0), (int) Math.floor(blockPos.z() / 16.0)));
                     }
                 }
 

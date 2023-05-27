@@ -18,9 +18,13 @@ public class Chunk {
 
     public final List<CubeCollider> INTERACTIVE_BLOCKS = new ArrayList<>();
 
+    private boolean changed;
+
     public Chunk(Vector2i offset, long seed) {
         OFFSET = offset;
         SEED = seed;
+
+        changed = false;
 
         for(int x = 0; x < 16; x++) {
             for(int z = 0; z < 16; z++) {
@@ -49,10 +53,14 @@ public class Chunk {
     }
 
     public void placeBlock(Vector3i coordinate, AbstractBlock block) {
-        if(coordinate.x() >= 0 && coordinate.x() <= getOffset().x() + 16)
-            if(coordinate.y() >= 0)
-                if(coordinate.z() >= 0 && coordinate.z() <= getOffset().y() + 16)
+        if(coordinate.x() >= 0 && coordinate.x() <= getOffset().x() + 16) {
+            if(coordinate.y() >= 0) {
+                if(coordinate.z() >= 0 && coordinate.z() <= getOffset().y() + 16) {
                     BLOCKS.put(coordinate, block);
+                    changed = true;
+                }
+            }
+        }
     }
     public void removeBlock(Vector3i coordinate) {
         BLOCKS.remove(coordinate);
@@ -72,5 +80,9 @@ public class Chunk {
 
     public long getSeed() {
         return SEED;
+    }
+
+    public boolean getChanged() {
+        return changed;
     }
 }

@@ -2,6 +2,7 @@ package org.mynewcraft;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.mynewcraft.client.graphics.shader.WorldShader;
@@ -18,14 +19,23 @@ import org.mynewcraft.client.graphics.util.Identifier;
 import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
 import org.mynewcraft.world.World;
 import org.mynewcraft.world.block.Blocks;
+import org.mynewcraft.world.chunk.Chunk;
+import org.mynewcraft.world.chunk.ChunkMeshBuilder;
 import org.mynewcraft.world.entity.custom.PlayerEntity;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 public class MyNewCraft {
     public static final String GAME_ID = "mynewcraft";
     public static final String RESOURCE_PACK = "MyNewCraft";
+
     public static final Logger LOGGER = LogManager.getLogger(GAME_ID);
+
+    public static final int VIEW_DISTANCE = 16;
+
+    private static final HashMap<Vector2i, Mesh> CHUNK_MESHES = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
         Window window = new Window(1920.0 * 1.5, 1080.0 * 1.5, "MyNewCraft", true, false, false);
@@ -48,7 +58,7 @@ public class MyNewCraft {
 
         LOGGER.debug("Seed: " + world.SEED);
 
-        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0, 9.0);
+        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0, 4.0, 9.0);
 
         BlockSelection selection = new BlockSelection();
 
@@ -83,21 +93,39 @@ public class MyNewCraft {
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
 
+            world.update();
             playerEntity.update(world, selection, keyboard, mouse, time);
+
+            int chunkX = (int) (playerEntity.collider.position.x() / 16.0);
+            int chunkZ = (int) (playerEntity.collider.position.z() / 16.0);
+
+            for(int i = chunkX - VIEW_DISTANCE / 2; i < chunkX + VIEW_DISTANCE / 2; i++)
+                for(int j = chunkZ - VIEW_DISTANCE / 2; j < chunkZ + VIEW_DISTANCE / 2; j++)
+                    if(new Vector2d(i, j).distance(chunkX, chunkZ) <= VIEW_DISTANCE / 2.0 && world.CHUNKS.get(new Vector2i(i, j)) == null && world.CHUNKS_TO_LOAD.get(new Vector2i(i, j)) == null)
+                        world.CHUNKS_TO_LOAD.put(new Vector2i(i, j), new Chunk(new Vector2i(i, j), world.SEED));
+
+            for(Vector2i key : world.CHUNKS.keySet()) {
+                if(new Vector2d(key).distance(chunkX, chunkZ) > VIEW_DISTANCE / 2.0 && world.CHUNKS_TO_REMOVE.get(key) == null)
+                    world.CHUNKS_TO_REMOVE.put(key, world.CHUNKS.get(key));
+                if(new Vector2d(key).distance(chunkX, chunkZ) <= VIEW_DISTANCE / 2.0 && world.CHUNKS.get(key) != null && CHUNK_MESHES.get(key) == null)
+                    CHUNK_MESHES.put(key, ChunkMeshBuilder.build(world.CHUNKS.get(key)));
+            }
 
             worldShader.load();
             worldShader.project(100.0, 0.05, 1000.0);
             worldShader.view(new Vector3d(playerEntity.collider.position).add(new Vector3d(playerEntity.collider.scale.x() / 2.0, playerEntity.collider.scale.y() - 0.2, playerEntity.collider.scale.z() / 2.0)), playerEntity.rotation);
 
-            for(Vector2i key : world.CHUNK_MESHES.keySet()) {
-                Mesh chunkMesh = world.CHUNK_MESHES.get(key);
+            for(Vector2i key : new ArrayList<>(CHUNK_MESHES.keySet())) {
+                if(new Vector2d(key).distance(chunkX, chunkZ) <= VIEW_DISTANCE / 2.0) {
+                    Mesh chunkMesh = CHUNK_MESHES.get(key);
 
-                chunkMesh.load();
+                    chunkMesh.load();
 
-                worldShader.transform(new Vector3d(key.x() * 16.0, 0.0, key.y() * 16.0), new Vector3d(), new Vector3d(1.0));
+                    worldShader.transform(new Vector3d(key.x() * 16.0, 0.0, key.y() * 16.0), new Vector3d(), new Vector3d(1.0));
 
-                chunkMesh.render(texture);
-                chunkMesh.unload();
+                    chunkMesh.render(texture);
+                    chunkMesh.unload();
+                } else CHUNK_MESHES.remove(key);
             }
 
             selection.load();
@@ -117,5 +145,9 @@ public class MyNewCraft {
         window.close();
 
         System.exit(0);
+    }
+    public static void updateMesh(World world, Vector2i key) {
+        if(world.CHUNKS.get(key) != null)
+            CHUNK_MESHES.replace(key, ChunkMeshBuilder.build(world.CHUNKS.get(key)));
     }
 }
