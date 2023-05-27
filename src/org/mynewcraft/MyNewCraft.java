@@ -20,7 +20,6 @@ import org.mynewcraft.world.World;
 import org.mynewcraft.world.block.Blocks;
 import org.mynewcraft.world.entity.custom.PlayerEntity;
 
-import java.io.IOException;
 import java.util.Random;
 
 public class MyNewCraft {
@@ -28,8 +27,8 @@ public class MyNewCraft {
     public static final String RESOURCE_PACK = "MyNewCraft";
     public static final Logger LOGGER = LogManager.getLogger(GAME_ID);
 
-    public static void main(String[] args) throws IOException {
-        Window window = new Window(1920.0 * 1.5, 1080.0 * 1.5, "MyNewCraft", true, false, true);
+    public static void main(String[] args) throws Exception {
+        Window window = new Window(1920.0 * 1.5, 1080.0 * 1.5, "MyNewCraft", true, false, false);
 
         OpenGL.setClearColor(new Vector3d(0.25, 0.55, 1.0));
         OpenGL.cullFace(true);
@@ -45,11 +44,11 @@ public class MyNewCraft {
         Texture texture = AtlasGenerator.generate(new Identifier(GAME_ID, "block"));
         Blocks.register();
 
-        World world = new World(new Random().nextLong(), 0.4);
+        World world = new World(new Random().nextLong(), 32.0, PlayerEntity.SURVIVAL_GAMEMODE);
 
         LOGGER.debug("Seed: " + world.SEED);
 
-        PlayerEntity playerEntity = new PlayerEntity(new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 0.6, 15.0);
+        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0, 9.0);
 
         BlockSelection selection = new BlockSelection();
 
@@ -74,16 +73,22 @@ public class MyNewCraft {
             if(keyboard.getPress(Keyboard.KEY_F3)) {
                 if(keyboard.getClick(Keyboard.KEY_T))
                     texture = AtlasGenerator.generate(new Identifier(GAME_ID, "block"));
-                if(keyboard.getClick(Keyboard.KEY_R))
+                if(keyboard.getClick(Keyboard.KEY_R)) {
                     worldShader = new WorldShader(window, GAME_ID);
+                    playerEntity.direction.y = 0.0;
+                }
+                if(keyboard.getClick(Keyboard.KEY_F4)) playerEntity.setGameMode(playerEntity.getGameMode() + 1);
             }
+            if(keyboard.getClick(Keyboard.KEY_R)) playerEntity.collider.position.set(new Random().nextDouble(0.0, world.SPAWN_AREA), 128.0, new Random().nextDouble(0.0, world.SPAWN_AREA));
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
+
+            LOGGER.debug(playerEntity.getGameMode());
 
             playerEntity.update(world, selection, keyboard, mouse, time);
 
             worldShader.load();
-            worldShader.project(90.0, 0.05, 1000.0);
+            worldShader.project(100.0, 0.05, 1000.0);
             worldShader.view(new Vector3d(playerEntity.collider.position).add(new Vector3d(playerEntity.collider.scale.x() / 2.0, playerEntity.collider.scale.y() - 0.2, playerEntity.collider.scale.z() / 2.0)), playerEntity.rotation);
 
             for(Vector2i key : world.CHUNK_MESHES.keySet()) {

@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
+import org.lwjglx.Sys;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;

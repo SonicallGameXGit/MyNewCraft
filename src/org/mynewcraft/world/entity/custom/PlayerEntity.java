@@ -19,17 +19,35 @@ import org.mynewcraft.world.block.custom.Block;
 import org.mynewcraft.world.chunk.Chunk;
 
 public class PlayerEntity extends LivingEntity {
+    public static final int SURVIVAL_GAMEMODE = 0;
+    public static final int CREATIVE_GAMEMODE = 1;
+    public static final int SPECTATOR_GAMEMODE = 2;
+
+    protected static final double FLY_JUMP_FREQUENCY = 0.6;
+
     public Camera camera;
 
-    public PlayerEntity(CubeCollider collider, Vector3d rotation, double mass, double speed) {
-        super(collider, rotation, mass, speed);
+    protected int gameMode;
+    protected boolean flying;
+
+    private int jumpClicks;
+    private long lastJumpTime;
+
+    public PlayerEntity(World world, CubeCollider collider, Vector3d rotation, double mass, double speed, double jumpPower) {
+        super(collider, rotation, mass, speed, jumpPower);
 
         camera = new Camera(new Vector3d(collider.position.x() + collider.scale.x() / 2.0, collider.position.y + collider.scale.y() / 1.125, collider.position.z() + collider.scale.z() / 2.0), new Vector3d());
+        gameMode = world.DEFAULT_GAMEMODE;
+        jumpClicks = 0;
+        lastJumpTime = 0L;
+        flying = false;
     }
 
     public void update(World world, BlockSelection selection, Keyboard keyboard, Mouse mouse, Time time) {
-        direction.set(0.0);
+        direction.set(new Vector3d(0.0, (gameMode == CREATIVE_GAMEMODE && flying) || gameMode == SPECTATOR_GAMEMODE ? 0.0 : direction.y(), 0.0));
+        applyPhysics = !flying;
 
+        if(canJump) flying = false;
         if(keyboard.getPress(Keyboard.KEY_W))
             direction.add(MathUtil.angleToDirection(new Vector2d(0.0, rotation.y())));
         if(keyboard.getPress(Keyboard.KEY_S))
@@ -38,11 +56,29 @@ public class PlayerEntity extends LivingEntity {
             direction.add(MathUtil.angleToDirection(new Vector2d(0.0, rotation.y() + 90.0)));
         if(keyboard.getPress(Keyboard.KEY_A))
             direction.add(MathUtil.angleToDirection(new Vector2d(0.0, rotation.y() - 90.0)));
-        if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT))
-            direction.sub(new Vector3d(0.0, 1.0, 0.0));
-        if(keyboard.getPress(Keyboard.KEY_SPACE))
-            direction.add(new Vector3d(0.0, 1.0, 0.0));
-        if(direction.length() > 1.0) direction.normalize();
+        if(gameMode == SPECTATOR_GAMEMODE) {
+            if(keyboard.getPress(Keyboard.KEY_SPACE)) direction.y += speed;
+            if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT)) direction.y -= speed;
+        } else if(gameMode == CREATIVE_GAMEMODE) {
+            if(flying) {
+                if(keyboard.getPress(Keyboard.KEY_SPACE)) direction.y += speed;
+                if(keyboard.getPress(Keyboard.KEY_LEFT_SHIFT)) direction.y -= speed;
+            } else if(keyboard.getPress(Keyboard.KEY_SPACE) && canJump) jump(false);
+            if(keyboard.getClick(Keyboard.KEY_SPACE)) {
+                if(jumpClicks == 0) lastJumpTime = System.currentTimeMillis();
+                else if(System.currentTimeMillis() / 1000.0 - lastJumpTime / 1000.0 <= FLY_JUMP_FREQUENCY) flying = !flying;
+                if(canJump) flying = false;
+
+                jumpClicks = jumpClicks + 1 >= 2 ? 0 : jumpClicks + 1;
+            }
+        } else if(keyboard.getPress(Keyboard.KEY_SPACE)) jump(false);
+        if(new Vector2d(direction.x(), direction.z()).length() > 1.0) {
+            Vector2d normalizedDirection = new Vector2d(direction.x(), direction.z()).normalize();
+            direction.x = normalizedDirection.x();
+            direction.z = normalizedDirection.y();
+        }
+
+        direction.mul(speed, 1.0, speed);
 
         rotation.add(new Vector3d(new Vector2d(mouse.getDirection().y(), mouse.getDirection().x()).mul(!mouse.getGrabbed() ? 0.0 : -0.05), 0.0));
         rotation.x = MathUtil.clamp(rotation.x(), -90.0, 90.0);
@@ -57,37 +93,48 @@ public class PlayerEntity extends LivingEntity {
         RayHitResult nearestHitResult = null;
         AbstractBlock nearestBlock = null;
 
-        for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-            for(Vector3i coordinate : chunk.getCoordinates()) {
-                RayHitResult hitResult = new CubeCollider(new Vector3d(coordinate).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), new Vector3d(1.0)).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
+        if(gameMode != SPECTATOR_GAMEMODE) {
+            for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
+                for(CubeCollider block : chunk.INTERACTIVE_BLOCKS) {
+                    RayHitResult hitResult = new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), block.scale).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
 
-                if(hitResult != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
-                    nearestDistance = hitResult.hitPoint().distance(camera.position);
-                    nearestHitResult = hitResult;
-                    nearestBlock = chunk.getMap().get(coordinate);
-                }
-            }
-        }
-
-        if(nearestHitResult != null && nearestDistance <= 6.0) {
-            if(mouse.getClick(Mouse.BUTTON_RIGHT)) {
-                Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
-                Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
-
-                world.placeBlock(intBlockPos, Blocks.COBBLESTONE);
-                world.updateMesh(new Vector2i((int) Math.floor(intBlockPos.x() / 16.0), (int) Math.floor(intBlockPos.z() / 16.0)));
-            }
-            if(mouse.getClick(Mouse.BUTTON_LEFT)) {
-                if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
-                    Vector3i blockPos = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
-
-                    world.removeBlock(blockPos);
-                    world.updateMesh(new Vector2i((int) Math.floor(blockPos.x() / 16.0), (int) Math.floor(blockPos.z() / 16.0)));
+                    if(hitResult != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
+                        nearestDistance = hitResult.hitPoint().distance(camera.position);
+                        nearestHitResult = hitResult;
+                        nearestBlock = chunk.getMap().get(new Vector3i((int) block.position.x(), (int) block.position.y(), (int) block.position.z()));
+                    }
                 }
             }
 
-            selection.position = new Vector3d(nearestHitResult.hitObject().position);
-            selection.enabled();
+            if(nearestHitResult != null && nearestDistance <= 6.0) {
+                if(mouse.getClick(Mouse.BUTTON_RIGHT) && !collider.checkCollision(new CubeCollider(new Vector3d(nearestHitResult.hitObject().position.x() + nearestHitResult.hitNormal().x(), nearestHitResult.hitObject().position.y() + nearestHitResult.hitNormal().y(), nearestHitResult.hitObject().position.z() + nearestHitResult.hitNormal().z()), nearestHitResult.hitObject().scale))) {
+                    Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
+                    Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
+
+                    world.placeBlock(intBlockPos, Blocks.COBBLESTONE);
+                    world.updateMesh(new Vector2i((int) Math.floor(intBlockPos.x() / 16.0), (int) Math.floor(intBlockPos.z() / 16.0)));
+                }
+                if(mouse.getClick(Mouse.BUTTON_LEFT)) {
+                    if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
+                        Vector3i blockPos = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
+
+                        world.removeBlock(blockPos);
+                        world.updateMesh(new Vector2i((int) Math.floor(blockPos.x() / 16.0), (int) Math.floor(blockPos.z() / 16.0)));
+                    }
+                }
+
+                selection.position = new Vector3d(nearestHitResult.hitObject().position);
+                selection.enabled();
+            } else selection.disabled();
         } else selection.disabled();
+    }
+    public void setGameMode(int gameMode) {
+        this.gameMode = gameMode > 2 ? 0 : gameMode;
+        processCollisions = gameMode != SPECTATOR_GAMEMODE;
+        flying = gameMode == SPECTATOR_GAMEMODE;
+    }
+
+    public int getGameMode() {
+        return gameMode;
     }
 }

@@ -6,6 +6,7 @@ import org.joml.Vector3i;
 import org.mynewcraft.engine.graphics.mesh.Mesh;
 import org.mynewcraft.engine.graphics.mesh.MeshBuffer;
 import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
+import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.world.block.AbstractBlock;
 
 import java.util.ArrayList;
@@ -21,6 +22,8 @@ public class ChunkMeshBuilder {
 
         Map<Vector3i, AbstractBlock> blocks = chunk.getMap();
 
+        chunk.INTERACTIVE_BLOCKS.clear();
+
         for(Vector3i coordinate : chunk.getCoordinates()) {
             int x = coordinate.x();
             int y = coordinate.y();
@@ -28,6 +31,7 @@ public class ChunkMeshBuilder {
 
             AbstractBlock block = blocks.get(coordinate);
 
+            boolean faceCreated = false;
             if(!blocks.containsKey(new Vector3i(x, y, z + 1))) {
                 vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
                 vertexList.add(new Vector3d(x, y, z + 1.0));
@@ -60,6 +64,8 @@ public class ChunkMeshBuilder {
                 normalList.add(new Vector3d(0.0, 0.0, 1.0));
                 normalList.add(new Vector3d(0.0, 0.0, 1.0));
                 normalList.add(new Vector3d(0.0, 0.0, 1.0));
+
+                faceCreated = true;
             }
             if(!blocks.containsKey(new Vector3i(x, y, z - 1))) {
                 vertexList.add(new Vector3d(x, y + 1.0, z));
@@ -93,6 +99,8 @@ public class ChunkMeshBuilder {
                 normalList.add(new Vector3d(0.0, 0.0, -1.0));
                 normalList.add(new Vector3d(0.0, 0.0, -1.0));
                 normalList.add(new Vector3d(0.0, 0.0, -1.0));
+
+                faceCreated = true;
             }
             if(!blocks.containsKey(new Vector3i(x, y + 1, z))) {
                 vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
@@ -126,6 +134,8 @@ public class ChunkMeshBuilder {
                 normalList.add(new Vector3d(0.0, 1.0, 0.0));
                 normalList.add(new Vector3d(0.0, 1.0, 0.0));
                 normalList.add(new Vector3d(0.0, 1.0, 0.0));
+
+                faceCreated = true;
             }
             if(!blocks.containsKey(new Vector3i(x, y - 1, z))) {
                 vertexList.add(new Vector3d(x, y, z + 1.0));
@@ -159,6 +169,8 @@ public class ChunkMeshBuilder {
                 normalList.add(new Vector3d(0.0, -1.0, 0.0));
                 normalList.add(new Vector3d(0.0, -1.0, 0.0));
                 normalList.add(new Vector3d(0.0, -1.0, 0.0));
+
+                faceCreated = true;
             }
             if(!blocks.containsKey(new Vector3i(x + 1, y, z))) {
                 vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
@@ -192,6 +204,8 @@ public class ChunkMeshBuilder {
                 normalList.add(new Vector3d(1.0, 0.0, 0.0));
                 normalList.add(new Vector3d(1.0, 0.0, 0.0));
                 normalList.add(new Vector3d(1.0, 0.0, 0.0));
+
+                faceCreated = true;
             }
             if(!blocks.containsKey(new Vector3i(x - 1, y, z))) {
                 vertexList.add(new Vector3d(x, y, z));
@@ -225,7 +239,11 @@ public class ChunkMeshBuilder {
                 normalList.add(new Vector3d(-1.0, 0.0, 0.0));
                 normalList.add(new Vector3d(-1.0, 0.0, 0.0));
                 normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+
+                faceCreated = true;
             }
+            if(faceCreated)
+                chunk.INTERACTIVE_BLOCKS.add(new CubeCollider(new Vector3d(x, y, z), new Vector3d(1.0)));
         }
 
         float[] vertices = new float[vertexList.size() * 3];

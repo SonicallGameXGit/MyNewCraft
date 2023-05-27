@@ -5,6 +5,7 @@ import com.flowpowered.noise.NoiseQuality;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.mynewcraft.engine.math.MathUtil;
+import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.block.Blocks;
 
@@ -14,6 +15,8 @@ public class Chunk {
     private final Vector2i OFFSET;
     private final long SEED;
     private final Map<Vector3i, AbstractBlock> BLOCKS = new HashMap<>();
+
+    public final List<CubeCollider> INTERACTIVE_BLOCKS = new ArrayList<>();
 
     public Chunk(Vector2i offset, long seed) {
         OFFSET = offset;
@@ -46,9 +49,9 @@ public class Chunk {
     }
 
     public void placeBlock(Vector3i coordinate, AbstractBlock block) {
-        if(coordinate.x() >= getOffset().x() && coordinate.x() < getOffset().x() + 16)
+        if(coordinate.x() >= 0 && coordinate.x() <= getOffset().x() + 16)
             if(coordinate.y() >= 0)
-                if(coordinate.z() >= getOffset().y() && coordinate.z() < getOffset().y() + 16)
+                if(coordinate.z() >= 0 && coordinate.z() <= getOffset().y() + 16)
                     BLOCKS.put(coordinate, block);
     }
     public void removeBlock(Vector3i coordinate) {

@@ -19,8 +19,13 @@ public class World {
     public final HashMap<Vector2i, Chunk> CHUNKS = new HashMap<>();
     public final HashMap<Vector2i, Mesh> CHUNK_MESHES = new HashMap<>();
 
-    public World(long seed, double gravity) {
+    public final double SPAWN_AREA = 32.0;
+    public final int DEFAULT_GAMEMODE;
+
+    public World(long seed, double gravity, int defaultGamemode) {
         SEED = seed;
+        DEFAULT_GAMEMODE = defaultGamemode;
+
         this.gravity = gravity;
 
         for(int x = 0; x < 2; x++) {
@@ -31,11 +36,9 @@ public class World {
         }
     }
 
-    public void update() {
-        // Update
-    }
     public void updateMesh(Vector2i offset) {
-        CHUNK_MESHES.replace(offset, ChunkMeshBuilder.build(CHUNKS.get(offset)));
+        if(CHUNKS.get(offset) != null)
+            CHUNK_MESHES.replace(offset, ChunkMeshBuilder.build(CHUNKS.get(offset)));
     }
     public void placeBlock(Vector3i coordinate, AbstractBlock block) {
         Vector2i chunkPos = new Vector2i((int) Math.floor((double) coordinate.x() / 16.0), (int) Math.floor((double) coordinate.z() / 16.0));
@@ -66,5 +69,8 @@ public class World {
                     chunks.add(CHUNKS.get(new Vector2i(i, j)));
 
         return chunks;
+    }
+    public Chunk getChunk(Vector2d position) {
+        return CHUNKS.get(new Vector2i((int) Math.floor(position.x() / 16.0), (int) Math.floor(position.y() / 16.0)));
     }
 }
