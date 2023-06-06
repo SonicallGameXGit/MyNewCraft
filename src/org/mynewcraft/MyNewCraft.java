@@ -75,7 +75,7 @@ public class MyNewCraft {
 
         LOGGER.debug("Seed: " + world.SEED);
 
-        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0, 4.0, 9.0, 16);
+        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0 * 8.0, 4.0, 9.0, 48);
 
         BlockSelection selection = new BlockSelection();
 

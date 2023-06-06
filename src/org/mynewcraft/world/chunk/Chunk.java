@@ -3,9 +3,7 @@ package org.mynewcraft.world.chunk;
 import com.flowpowered.noise.Noise;
 import com.flowpowered.noise.NoiseQuality;
 import org.joml.Vector2i;
-import org.joml.Vector3f;
 import org.joml.Vector3i;
-import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.engine.math.MathUtil;
 import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.world.block.AbstractBlock;
@@ -39,11 +37,11 @@ public class Chunk {
                 int ox = offset.x() * 16 + x;
                 int oz = offset.y() * 16 + z;
 
-                double mountainsHeight = Noise.gradientCoherentNoise3D(ox / 64.0, 0, oz / 64.0, (int) seed, NoiseQuality.FAST) * 64.0 + 72.0;
+                double mountainsHeight = Noise.gradientCoherentNoise3D(ox / 64.0, 0, oz / 64.0, (int) seed, NoiseQuality.FAST) * 64.0 + 128.0;
                 mountainsHeight += Noise.gradientCoherentNoise3D(ox / 32.0, 0, oz / 32.0, (int) seed, NoiseQuality.FAST) * 16.0;
                 mountainsHeight += Noise.gradientCoherentNoise3D(ox / 16.0, 0, oz / 16.0, (int) seed, NoiseQuality.FAST) * 4.0;
-                double plainsHeight = Noise.gradientCoherentNoise3D(ox / 72.0, 0, oz / 72.0, (int) seed, NoiseQuality.FAST) * 2.0 + 64.0;
-                double height = MathUtil.smooth(mountainsHeight, plainsHeight, Noise.gradientCoherentNoise3D(ox / 256.0, 0, oz / 256.0, (int) seed, NoiseQuality.FAST));
+                double plainsHeight = Noise.gradientCoherentNoise3D(ox / 72.0, 0, oz / 72.0, (int) seed, NoiseQuality.FAST) * 5.0 + 128.0;
+                double height = MathUtil.smooth(mountainsHeight, plainsHeight, Noise.gradientCoherentNoise3D(ox / 256.0, 0, oz / 256.0, (int) seed, NoiseQuality.FAST) + 0.4);
 
                 for(int y = 1; y < height; y++) {
                     AbstractBlock block = Blocks.STONE;
