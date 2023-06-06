@@ -50,8 +50,11 @@ public class Chunk {
                         block = Blocks.DIRT;
                     if(y >= height - 1) block = Blocks.GRASS_BLOCK;
 
-                    if(notOutline) blocks.put(new Vector3i(x, y, z), block);
-                    else abstractOutline.put(new Vector3i(x, y, z), true);
+                    if(y >= 100 || Noise.valueCoherentNoise3D(ox / 10.0, y / 10.0, oz / 10.0, (int) seed, NoiseQuality.FAST) <= 0.5) {
+                        if(notOutline)
+                            blocks.put(new Vector3i(x, y, z), block);
+                        else abstractOutline.put(new Vector3i(x, y, z), true);
+                    }
                 }
 
                 if(notOutline) blocks.put(new Vector3i(x, 0, z), Blocks.BEDROCK);
