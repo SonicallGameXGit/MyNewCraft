@@ -3,6 +3,7 @@ package org.mynewcraft.world;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
+import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.chunk.Chunk;
 
@@ -27,25 +28,22 @@ public class World {
 
         this.gravity = gravity;
 
-        for(int x = 0; x < 2; x++)
-            for(int z = 0; z < 2; z++)
-                CHUNKS.put(new Vector2i(x, z), new Chunk(new Vector2i(x, z), SEED));
+        CHUNKS.put(new Vector2i(), new Chunk(new Vector2i(), SEED));
     }
 
     public void update() {
         if(CHUNKS_TO_LOAD.size() > 0) {
             Chunk chunk = CHUNKS_TO_LOAD.values().stream().toList().get(0);
-
             CHUNKS.put(chunk.getOffset(), chunk);
-
             CHUNKS_TO_LOAD.remove(chunk.getOffset());
         }
-        for(Vector2i key : CHUNKS_TO_REMOVE.keySet()) {
-            if(!CHUNKS_TO_REMOVE.get(key).getChanged())
-                CHUNKS.remove(key);
+        if(CHUNKS_TO_REMOVE.size() > 0) {
+            Vector2i offset = CHUNKS_TO_REMOVE.keySet().stream().toList().get(0);
+            CHUNKS.remove(offset);
+            CHUNKS_TO_REMOVE.remove(offset);
         }
 
-        CHUNKS_TO_REMOVE.clear();
+        MyNewCraft.LOGGER.debug(CHUNKS.size());
     }
     public void placeBlock(Vector3i coordinate, AbstractBlock block) {
         Vector2i chunkPos = new Vector2i((int) Math.floor((double) coordinate.x() / 16.0), (int) Math.floor((double) coordinate.z() / 16.0));
@@ -66,8 +64,14 @@ public class World {
         CHUNKS_TO_REMOVE.clear();
         CHUNKS.clear();
     }
+    public void loadChunk(Vector2i offset) {
+        CHUNKS_TO_LOAD.put(offset, new Chunk(offset, SEED));
+    }
+    public void removeChunk(Vector2i offset) {
+        CHUNKS_TO_REMOVE.put(offset, CHUNKS.get(offset));
+    }
 
-    public List<Chunk> getNearChunks(Vector2d position) {
+    public Chunk[] getNearChunks(Vector2d position) {
         int chunkX = (int) Math.floor(position.x() / 16.0);
         int chunkZ = (int) Math.floor(position.y() / 16.0);
 
@@ -77,6 +81,10 @@ public class World {
                 if(CHUNKS.get(new Vector2i(i, j)) != null)
                     chunks.add(CHUNKS.get(new Vector2i(i, j)));
 
-        return chunks;
+        return chunks.toArray(new Chunk[0]);
+    }
+
+    public Chunk getChunk(Vector2i offset) {
+        return CHUNKS.get(offset);
     }
 }

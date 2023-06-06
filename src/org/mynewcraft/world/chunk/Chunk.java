@@ -24,12 +24,10 @@ public class Chunk {
         OFFSET = offset;
         SEED = seed;
 
-        changed = false;
-
         for(int x = 0; x < 16; x++) {
             for(int z = 0; z < 16; z++) {
-                int ox = offset.x() * 16 + x;
-                int oz = offset.y() * 16 + z;
+                int ox = OFFSET.x() * 16 + x;
+                int oz = OFFSET.y() * 16 + z;
 
                 double mountainsHeight = Noise.gradientCoherentNoise3D(ox / 64.0, 0, oz / 64.0, (int) seed, NoiseQuality.FAST) * 64.0 + 72.0;
                 mountainsHeight += Noise.gradientCoherentNoise3D(ox / 32.0, 0, oz / 32.0, (int) seed, NoiseQuality.FAST) * 16.0;
@@ -40,7 +38,7 @@ public class Chunk {
                 for(int y = 1; y < height; y++) {
                     AbstractBlock block = Blocks.STONE;
 
-                    if(y >= height - new Random(seed + ox * 38506L + oz * 101950L).nextDouble() * 5.0 - 1.0)
+                    if(y >= height - new Random(SEED + ox * 38506L + oz * 101950L).nextDouble() * 5.0 - 1.0)
                         block = Blocks.DIRT;
                     if(y >= height - 1) block = Blocks.GRASS_BLOCK;
 
@@ -50,6 +48,8 @@ public class Chunk {
                 BLOCKS.put(new Vector3i(x, 0, z), Blocks.BEDROCK);
             }
         }
+
+        changed = false;
     }
 
     public void placeBlock(Vector3i coordinate, AbstractBlock block) {
@@ -84,5 +84,9 @@ public class Chunk {
 
     public boolean getChanged() {
         return changed;
+    }
+
+    public CubeCollider[] getInteractiveBlocks() {
+        return INTERACTIVE_BLOCKS.toArray(new CubeCollider[0]);
     }
 }

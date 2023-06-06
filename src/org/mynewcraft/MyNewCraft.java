@@ -37,8 +37,6 @@ public class MyNewCraft {
 
     public static final Logger LOGGER = LogManager.getLogger(GAME_ID);
 
-    public static final int VIEW_DISTANCE = 16;
-
     public static DiscordRPC discordRPC;
     public static DiscordRichPresence discordRichPresence;
 
@@ -77,7 +75,7 @@ public class MyNewCraft {
 
         LOGGER.debug("Seed: " + world.SEED);
 
-        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0, 4.0, 9.0);
+        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0, 4.0, 9.0, 16);
 
         BlockSelection selection = new BlockSelection();
 
@@ -123,16 +121,16 @@ public class MyNewCraft {
             int chunkX = (int) (playerEntity.collider.position.x() / 16.0);
             int chunkZ = (int) (playerEntity.collider.position.z() / 16.0);
 
-            for(int i = chunkX - VIEW_DISTANCE / 2; i < chunkX + VIEW_DISTANCE / 2; i++)
-                for(int j = chunkZ - VIEW_DISTANCE / 2; j < chunkZ + VIEW_DISTANCE / 2; j++)
-                    if(new Vector2d(i, j).distance(chunkX, chunkZ) <= VIEW_DISTANCE / 2.0 && world.CHUNKS.get(new Vector2i(i, j)) == null && world.CHUNKS_TO_LOAD.get(new Vector2i(i, j)) == null)
-                        world.CHUNKS_TO_LOAD.put(new Vector2i(i, j), new Chunk(new Vector2i(i, j), world.SEED));
+            for(int i = chunkX - playerEntity.getViewDistance() / 2; i < chunkX + playerEntity.getViewDistance() / 2; i++)
+                for(int j = chunkZ - playerEntity.getViewDistance() / 2; j < chunkZ + playerEntity.getViewDistance() / 2; j++)
+                    if(new Vector2d(i, j).distance(chunkX, chunkZ) <= playerEntity.getViewDistance() / 2.0 && world.getChunk(new Vector2i(i, j)) == null && world.CHUNKS_TO_LOAD.get(new Vector2i(i, j)) == null)
+                        world.loadChunk(new Vector2i(i, j));
 
             for(Vector2i key : world.CHUNKS.keySet()) {
-                if(new Vector2d(key).distance(chunkX, chunkZ) > VIEW_DISTANCE / 2.0 && world.CHUNKS_TO_REMOVE.get(key) == null)
-                    world.CHUNKS_TO_REMOVE.put(key, world.CHUNKS.get(key));
-                if(new Vector2d(key).distance(chunkX, chunkZ) <= VIEW_DISTANCE / 2.0 && world.CHUNKS.get(key) != null && CHUNK_MESHES.get(key) == null)
-                    CHUNK_MESHES.put(key, ChunkMeshBuilder.build(world.CHUNKS.get(key)));
+                if(new Vector2d(key).distance(chunkX, chunkZ) > playerEntity.getViewDistance() / 2.0 && world.CHUNKS_TO_REMOVE.get(key) == null)
+                    world.removeChunk(key);
+                if(new Vector2d(key).distance(chunkX, chunkZ) <= playerEntity.getViewDistance() / 2.0 && world.getChunk(key) != null && CHUNK_MESHES.get(key) == null)
+                    CHUNK_MESHES.put(key, ChunkMeshBuilder.build(world.getChunk(key)));
             }
 
             worldShader.load();
@@ -140,9 +138,8 @@ public class MyNewCraft {
             worldShader.view(new Vector3d(playerEntity.collider.position).add(new Vector3d(playerEntity.collider.scale.x() / 2.0, playerEntity.collider.scale.y() - 0.2, playerEntity.collider.scale.z() / 2.0)), playerEntity.rotation);
 
             for(Vector2i key : new ArrayList<>(CHUNK_MESHES.keySet())) {
-                if(new Vector2d(key).distance(chunkX, chunkZ) <= VIEW_DISTANCE / 2.0) {
+                if(new Vector2d(key).distance(chunkX, chunkZ) <= playerEntity.getViewDistance() / 2.0) {
                     Mesh chunkMesh = CHUNK_MESHES.get(key);
-
                     chunkMesh.load();
 
                     worldShader.transform(new Vector3d(key.x() * 16.0, 0.0, key.y() * 16.0), new Vector3d(), new Vector3d(1.0));
@@ -168,13 +165,14 @@ public class MyNewCraft {
         LOGGER.traceExit();
 
         world.clear();
+
         worldShader.clear();
         window.close();
 
         System.exit(0);
     }
     public static void updateMesh(World world, Vector2i key) {
-        if(world.CHUNKS.get(key) != null)
-            CHUNK_MESHES.replace(key, ChunkMeshBuilder.build(world.CHUNKS.get(key)));
+        Chunk chunk = world.getChunk(key);
+        if(chunk != null) CHUNK_MESHES.replace(key, ChunkMeshBuilder.build(chunk));
     }
 }
