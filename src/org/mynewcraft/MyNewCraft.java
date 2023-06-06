@@ -115,8 +115,8 @@ public class MyNewCraft {
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
 
-            world.update();
             playerEntity.update(world, selection, keyboard, mouse, time);
+            world.update();
 
             int chunkX = (int) (playerEntity.collider.position.x() / 16.0);
             int chunkZ = (int) (playerEntity.collider.position.z() / 16.0);

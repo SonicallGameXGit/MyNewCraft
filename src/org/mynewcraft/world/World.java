@@ -3,7 +3,6 @@ package org.mynewcraft.world;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
-import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.chunk.Chunk;
 
@@ -34,31 +33,73 @@ public class World {
     public void update() {
         if(CHUNKS_TO_LOAD.size() > 0) {
             Chunk chunk = CHUNKS_TO_LOAD.values().stream().toList().get(0);
-            CHUNKS.put(chunk.getOffset(), chunk);
+            if(!CHUNKS.containsKey(chunk.getOffset())) CHUNKS.put(chunk.getOffset(), chunk);
+
             CHUNKS_TO_LOAD.remove(chunk.getOffset());
         }
         if(CHUNKS_TO_REMOVE.size() > 0) {
             Vector2i offset = CHUNKS_TO_REMOVE.keySet().stream().toList().get(0);
-            CHUNKS.remove(offset);
+            if(!CHUNKS.get(offset).getChanged()) CHUNKS.remove(offset);
             CHUNKS_TO_REMOVE.remove(offset);
         }
-
-        MyNewCraft.LOGGER.debug(CHUNKS.size());
     }
-    public void placeBlock(Vector3i coordinate, AbstractBlock block) {
+    public ArrayList<Vector2i> placeBlock(Vector3i coordinate, AbstractBlock block) {
         Vector2i chunkPos = new Vector2i((int) Math.floor((double) coordinate.x() / 16.0), (int) Math.floor((double) coordinate.z() / 16.0));
         Chunk chunk = CHUNKS.get(chunkPos);
 
         Vector3i intBlockPos = new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * 16, 0, chunkPos.y() * 16));
 
-        if(chunk != null && !chunk.getMap().containsKey(intBlockPos)) chunk.placeBlock(intBlockPos, block);
+        ArrayList<Vector2i> chunksToUpdate = new ArrayList<>();
+        chunk.placeBlock(intBlockPos, block);
+
+        if(intBlockPos.x() >= 15) {
+            CHUNKS.get(new Vector2i(chunkPos).add(1, 0)).placeAbstractOutlineBlock(new Vector3i(-1, intBlockPos.y(), intBlockPos.z()));
+            chunksToUpdate.add(new Vector2i(chunkPos).add(1, 0));
+        }
+        if(intBlockPos.x() <= 0) {
+            CHUNKS.get(new Vector2i(chunkPos).sub(1, 0)).placeAbstractOutlineBlock(new Vector3i(16, intBlockPos.y(), intBlockPos.z()));
+            chunksToUpdate.add(new Vector2i(chunkPos).sub(1, 0));
+        }
+        if(intBlockPos.z() >= 15) {
+            CHUNKS.get(new Vector2i(chunkPos).add(0, 1)).placeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), -1));
+            chunksToUpdate.add(new Vector2i(chunkPos).add(0, 1));
+        }
+        if(intBlockPos.z() <= 0) {
+            CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)).placeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), 16));
+            chunksToUpdate.add(new Vector2i(chunkPos).sub(0, 1));
+        }
+
+        return chunksToUpdate;
     }
-    public void removeBlock(Vector3i coordinate) {
+    public ArrayList<Vector2i> removeBlock(Vector3i coordinate) {
         Vector2i chunkPos = new Vector2i((int) Math.floor((double) coordinate.x() / 16.0), (int) Math.floor((double) coordinate.z() / 16.0));
         Chunk chunk = CHUNKS.get(chunkPos);
 
-        if(chunk != null) chunk.removeBlock(new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * 16, 0, chunkPos.y() * 16)));
+        Vector3i intBlockPos = new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * 16, 0, chunkPos.y() * 16));
+
+        ArrayList<Vector2i> chunksToUpdate = new ArrayList<>();
+        chunk.removeBlock(intBlockPos);
+
+        if(intBlockPos.x() >= 15) {
+            CHUNKS.get(new Vector2i(chunkPos).add(1, 0)).removeAbstractOutlineBlock(new Vector3i(-1, intBlockPos.y(), intBlockPos.z()));
+            chunksToUpdate.add(new Vector2i(chunkPos).add(1, 0));
+        }
+        if(intBlockPos.x() <= 0) {
+            CHUNKS.get(new Vector2i(chunkPos).sub(1, 0)).removeAbstractOutlineBlock(new Vector3i(16, intBlockPos.y(), intBlockPos.z()));
+            chunksToUpdate.add(new Vector2i(chunkPos).sub(1, 0));
+        }
+        if(intBlockPos.z() >= 15) {
+            CHUNKS.get(new Vector2i(chunkPos).add(0, 1)).removeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), -1));
+            chunksToUpdate.add(new Vector2i(chunkPos).add(0, 1));
+        }
+        if(intBlockPos.z() <= 0) {
+            CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)).removeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), 16));
+            chunksToUpdate.add(new Vector2i(chunkPos).sub(0, 1));
+        }
+
+        return chunksToUpdate;
     }
+
     public void clear() {
         CHUNKS_TO_LOAD.clear();
         CHUNKS_TO_REMOVE.clear();

@@ -1,8 +1,8 @@
 #version 420
 #define SUN_DIRECTION vec3(0.7, -1.0, 0.3)
 
-in vec2 vTexcoord;
-in vec3 vNormal;
+layout(location = 0) in vec2 vTexcoord;
+layout(location = 1) in vec3 vNormal;
 
 uniform sampler2D colorTexture;
 

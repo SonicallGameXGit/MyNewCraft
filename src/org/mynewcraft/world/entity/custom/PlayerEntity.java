@@ -122,14 +122,16 @@ public class PlayerEntity extends LivingEntity {
                     Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
                     Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
 
-                    world.placeBlock(intBlockPos, Blocks.COBBLESTONE);
+                    for(Vector2i offset : world.placeBlock(intBlockPos, Blocks.COBBLESTONE))
+                        MyNewCraft.updateMesh(world, offset);
                     MyNewCraft.updateMesh(world, new Vector2i((int) Math.floor(intBlockPos.x() / 16.0), (int) Math.floor(intBlockPos.z() / 16.0)));
                 }
                 if(mouse.getClick(Mouse.BUTTON_LEFT)) {
                     if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
                         Vector3i blockPos = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
 
-                        world.removeBlock(blockPos);
+                        for(Vector2i offset : world.removeBlock(blockPos))
+                            MyNewCraft.updateMesh(world, offset);
                         MyNewCraft.updateMesh(world, new Vector2i((int) Math.floor(blockPos.x() / 16.0), (int) Math.floor(blockPos.z() / 16.0)));
                     }
                 }

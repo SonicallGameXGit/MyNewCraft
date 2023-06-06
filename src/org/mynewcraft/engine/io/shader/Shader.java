@@ -10,14 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Shader {
-    protected static final int POSITION_ATTRIBUTE_ID = 0;
-    protected static final int TEXCOORD_ATTRIBUTE_ID = 1;
-
     private final int programId;
     private final int vertexId;
     private final int fragmentId;
 
-    private final Map<String, Integer> VARIABLES = new HashMap<>();
+    private final Map<String, Integer> variables = new HashMap<>();
 
     protected Shader(String vertexLocation, String fragmentLocation) {
         programId = GL20.glCreateProgram();
@@ -26,9 +23,6 @@ public abstract class Shader {
 
         GL20.glAttachShader(programId, vertexId);
         GL20.glAttachShader(programId, fragmentId);
-
-        loadAttributes();
-
         GL20.glLinkProgram(programId);
         GL20.glValidateProgram(programId);
 
@@ -37,15 +31,7 @@ public abstract class Shader {
             System.exit(1);
         }
 
-        loadVariables();
         unload();
-    }
-
-    protected abstract void loadVariables();
-    protected abstract void loadAttributes();
-
-    protected void createAttribute(int id, String title) {
-        GL20.glBindAttribLocation(programId, id, title);
     }
 
     private int loadShader(String location, int type) {
@@ -79,6 +65,7 @@ public abstract class Shader {
 
         return shaderId;
     }
+
     public void load() {
         GL20.glUseProgram(programId);
     }
@@ -95,46 +82,53 @@ public abstract class Shader {
         GL20.glDeleteProgram(programId);
     }
 
-    protected void createVariable(String title) {
-        VARIABLES.put(title, GL20.glGetUniformLocation(programId, title));
-    }
     protected void setVariable(String title, boolean value) {
-        GL20.glUniform1i(VARIABLES.get(title), value ? 1 : 0);
+        if(variables.containsKey(title)) GL20.glUniform1i(variables.get(title), value ? 1 : 0);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, int value) {
-        GL20.glUniform1i(VARIABLES.get(title), value);
+        if(variables.containsKey(title)) GL20.glUniform1i(variables.get(title), value);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, float value) {
-        GL20.glUniform1f(VARIABLES.get(title), value);
+        if(variables.containsKey(title)) GL20.glUniform1f(variables.get(title), value);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, double value) {
-        GL20.glUniform1f(VARIABLES.get(title), (float) value);
+        if(variables.containsKey(title)) GL20.glUniform1f(variables.get(title), (float) value);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, Vector2d value) {
-        GL20.glUniform2f(VARIABLES.get(title), (float) value.x, (float) value.y);
+        if(variables.containsKey(title)) GL20.glUniform2f(variables.get(title), (float) value.x, (float) value.y);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, Vector3d value) {
-        GL20.glUniform3f(VARIABLES.get(title), (float) value.x, (float) value.y, (float) value.z);
+        if(variables.containsKey(title)) GL20.glUniform3f(variables.get(title), (float) value.x, (float) value.y, (float) value.z);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, Vector4d value) {
-        GL20.glUniform4f(VARIABLES.get(title), (float) value.x, (float) value.y, (float) value.z, (float) value.w);
+        if(variables.containsKey(title)) GL20.glUniform4f(variables.get(title), (float) value.x, (float) value.y, (float) value.z, (float) value.w);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, Matrix2f value) {
         float[] buffer = new float[4];
         value.get(buffer);
 
-        GL20.glUniformMatrix2fv(VARIABLES.get(title), false, buffer);
+        if(variables.containsKey(title)) GL20.glUniformMatrix2fv(variables.get(title), false, buffer);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, Matrix3f value) {
         float[] buffer = new float[9];
         value.get(buffer);
 
-        GL20.glUniformMatrix3fv(VARIABLES.get(title), false, buffer);
+        if(variables.containsKey(title)) GL20.glUniformMatrix3fv(variables.get(title), false, buffer);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
     protected void setVariable(String title, Matrix4f value) {
         float[] buffer = new float[16];
         value.get(buffer);
 
-        GL20.glUniformMatrix4fv(VARIABLES.get(title), false, buffer);
+        if(variables.containsKey(title)) GL20.glUniformMatrix4fv(variables.get(title), false, buffer);
+        else variables.put(title, GL20.glGetUniformLocation(programId, title));
     }
 }

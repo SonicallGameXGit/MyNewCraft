@@ -40,7 +40,7 @@ public abstract class LivingEntity extends AbstractEntity {
         collider.position.y += direction.y() * time.getDelta();
         if(processCollisions) {
             for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(CubeCollider block : chunk.INTERACTIVE_BLOCKS) {
+                for(CubeCollider block : chunk.getInteractiveBlocks()) {
                     if(new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), block.scale).checkCollision(collider)) {
                         collider.position.y -= direction.y() * time.getDelta();
 
@@ -56,7 +56,7 @@ public abstract class LivingEntity extends AbstractEntity {
         collider.position.x += direction.x() * time.getDelta();
         if(processCollisions) {
             for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(CubeCollider block : chunk.INTERACTIVE_BLOCKS) {
+                for(CubeCollider block : chunk.getInteractiveBlocks()) {
                     if(new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), block.scale).checkCollision(collider)) {
                         collider.position.x -= direction.x() * time.getDelta();
                         break;
@@ -68,7 +68,7 @@ public abstract class LivingEntity extends AbstractEntity {
         collider.position.z += direction.z() * time.getDelta();
         if(processCollisions) {
             for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(CubeCollider block : chunk.INTERACTIVE_BLOCKS) {
+                for(CubeCollider block : chunk.getInteractiveBlocks()) {
                     if(new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * 16.0, 0.0, chunk.getOffset().y() * 16.0), block.scale).checkCollision(collider)) {
                         collider.position.z -= direction.z() * time.getDelta();
                         break;
