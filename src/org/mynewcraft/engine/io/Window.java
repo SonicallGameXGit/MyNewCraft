@@ -1,5 +1,11 @@
 package org.mynewcraft.engine.io;
 
+import imgui.ImFontAtlas;
+import imgui.ImFontConfig;
+import imgui.ImGui;
+import imgui.flag.*;
+import imgui.gl3.ImGuiImplGl3;
+import imgui.glfw.ImGuiImplGlfw;
 import org.joml.Vector2d;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.*;
@@ -7,7 +13,6 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
-import org.lwjglx.Sys;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -29,6 +34,9 @@ public class Window {
 
     private boolean fullscreen;
 
+    private final ImGuiImplGlfw imGuiGlfw = new ImGuiImplGlfw();
+    private final ImGuiImplGl3 imGuiGl = new ImGuiImplGl3();
+
     public Window(double width, double height, String title, boolean resizable, boolean fullscreen, boolean verticalSynchronization) {
         GLFWErrorCallback.createPrint(System.err).set();
 
@@ -38,7 +46,7 @@ public class Window {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 
         scrollDirection = new Vector2d();
@@ -52,9 +60,7 @@ public class Window {
         if(window == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
         glfwSetWindowSizeCallback(window, (window, newWidth, newHeight) -> GL11.glViewport(0, 0, newWidth, newHeight));
-        glfwSetScrollCallback(window, (window, directionX, directionY) -> {
-            scrollDirection.add(directionX, directionY);
-        });
+        glfwSetScrollCallback(window, (window, directionX, directionY) -> scrollDirection.add(directionX, directionY));
 
         Vector2d screenSize = getScale();
 
@@ -87,13 +93,53 @@ public class Window {
         this.fullscreen = fullscreen;
     }
 
+    public void initImGui(Font font, boolean enablePopup) {
+        ImGui.createContext();
+        if(enablePopup) ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
+
+        imGuiGlfw.init(window, true);
+
+        ImFontAtlas fontAtlas = ImGui.getIO().getFonts();
+        ImFontConfig fontConfig = new ImFontConfig();
+
+        fontConfig.setGlyphRanges(fontAtlas.getGlyphRangesDefault());
+        fontConfig.setPixelSnapH(true);
+
+        fontAtlas.addFontFromFileTTF(font.location(), (float) font.scale(), fontConfig);
+
+        fontConfig.destroy();
+
+        imGuiGl.init("#version 420");
+    }
     public void update() {
         glfwSwapBuffers(window);
         glfwPollEvents();
 
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
     }
+    public void imGuiBegin() {
+        imGuiGlfw.newFrame();
+        ImGui.newFrame();
+    }
+    public void imGuiEnd() {
+        ImGui.render();
+        imGuiGl.renderDrawData(ImGui.getDrawData());
+
+        if(ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+            long backup = glfwGetCurrentContext();
+
+            ImGui.updatePlatformWindows();
+            ImGui.renderPlatformWindowsDefault();
+
+            glfwMakeContextCurrent(backup);
+        }
+    }
     public void close() {
+        imGuiGl.dispose();
+        imGuiGlfw.dispose();
+
+        ImGui.destroyContext();
+
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -155,6 +201,19 @@ public class Window {
             height = stack.mallocInt(1);
 
             glfwGetWindowSize(window, width, height);
+        }
+
+        return new Vector2d(width.get(), height.get());
+    }
+    public Vector2d getMonitorScale() {
+        IntBuffer width;
+        IntBuffer height;
+
+        try(MemoryStack stack = MemoryStack.stackPush()) {
+            width = stack.mallocInt(1);
+            height = stack.mallocInt(1);
+
+            glfwGetMonitorWorkarea(glfwGetPrimaryMonitor(), null, null, width, height);
         }
 
         return new Vector2d(width.get(), height.get());

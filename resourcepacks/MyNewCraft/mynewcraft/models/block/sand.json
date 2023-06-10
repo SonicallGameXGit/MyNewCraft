@@ -1,0 +1,9 @@
+{
+  "parent": "mynewcraft:block/cube_all",
+  "textures": {
+    "all": {
+      "id": "mynewcraft:block/sand",
+      "natural": true
+    }
+  }
+}

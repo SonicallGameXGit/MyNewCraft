@@ -1,7 +1,7 @@
 package org.mynewcraft.client.graphics.util;
 
 import org.joml.Vector3d;
-import org.mynewcraft.engine.graphics.OpenGL;
+import org.mynewcraft.engine.graphics.OpenGl;
 import org.mynewcraft.engine.graphics.mesh.Mesh;
 import org.mynewcraft.engine.io.texture.Texture;
 
@@ -60,13 +60,13 @@ public class BlockSelection extends Mesh {
 
     public void render() {
         if(enabled) {
-            OpenGL.cullFace(false);
-            OpenGL.outlineOnly(true);
+            OpenGl.cullFace(false);
+            OpenGl.outlineOnly(true);
 
             render((Texture) null);
 
-            OpenGL.outlineOnly(false);
-            OpenGL.cullFace(true);
+            OpenGl.outlineOnly(false);
+            OpenGl.cullFace(true);
         }
     }
     public void enabled() {

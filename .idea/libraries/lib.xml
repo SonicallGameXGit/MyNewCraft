@@ -13,16 +13,23 @@
       <root url="file://$PROJECT_DIR$/libs/DISCORD" />
       <root url="file://$PROJECT_DIR$/libs/DISCORD" />
       <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
     </CLASSES>
     <JAVADOC />
     <NATIVE>
       <root url="file://$PROJECT_DIR$/libs/DISCORD" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
     </NATIVE>
     <SOURCES>
       <root url="file://$PROJECT_DIR$/libs/JOML" />
       <root url="file://$PROJECT_DIR$/libs/LWJGL" />
       <root url="file://$PROJECT_DIR$/libs/LOG4J" />
       <root url="file://$PROJECT_DIR$/libs/LOG4J" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
+      <root url="file://$PROJECT_DIR$/libs/IMGUI" />
     </SOURCES>
     <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
@@ -30,12 +37,18 @@
     <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/DISCORD" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/GSON" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/IMGUI" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/IMGUI" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/IMGUI" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/JOML" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/LWJGL" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/NOISE" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/SLICK" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/IMGUI" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/IMGUI" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/IMGUI" recursive="false" type="SOURCES" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/JOML" recursive="false" type="SOURCES" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" type="SOURCES" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/LOG4J" recursive="false" type="SOURCES" />

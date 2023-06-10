@@ -9,10 +9,12 @@ import org.apache.logging.log4j.Logger;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
+import org.mynewcraft.client.client.WorldGenGui;
 import org.mynewcraft.client.graphics.shader.WorldShader;
 import org.mynewcraft.client.graphics.util.BlockSelection;
-import org.mynewcraft.engine.graphics.OpenGL;
+import org.mynewcraft.engine.graphics.OpenGl;
 import org.mynewcraft.engine.graphics.mesh.Mesh;
+import org.mynewcraft.engine.io.Font;
 import org.mynewcraft.engine.io.Keyboard;
 import org.mynewcraft.engine.io.Mouse;
 import org.mynewcraft.engine.io.Window;
@@ -40,7 +42,9 @@ public class MyNewCraft {
     public static DiscordRPC discordRPC;
     public static DiscordRichPresence discordRichPresence;
 
-    private static final HashMap<Vector2i, Mesh> CHUNK_MESHES = new HashMap<>();
+    public static final HashMap<Vector2i, Mesh> CHUNK_MESHES = new HashMap<>();
+
+    public static final int viewDistance = 20;
 
     public static void main(String[] args) throws Exception {
         discordRPC = (DiscordRPC) Native.loadLibrary("libs/DISCORD/discord-rpc", DiscordRPC.class);
@@ -56,10 +60,11 @@ public class MyNewCraft {
 
         Window window = new Window(1920.0 * 1.5, 1080.0 * 1.5, "MyNewCraft", true, false, false);
         window.setIcon("resourcepacks/" + RESOURCE_PACK + "/" + GAME_ID + "/icon.png");
+        window.initImGui(new Font("resourcepacks/" + RESOURCE_PACK + "/" + GAME_ID + "/fonts/default.ttf", 35.0f), false);
 
-        OpenGL.setClearColor(new Vector3d(0.25, 0.55, 1.0));
-        OpenGL.cullFace(true);
-        OpenGL.outlineWidth(5.0);
+        OpenGl.setClearColor(new Vector3d(0.25, 0.55, 1.0));
+        OpenGl.cullFace(true);
+        OpenGl.outlineWidth(5.0);
 
         Keyboard keyboard = new Keyboard(window);
         Mouse mouse = new Mouse(window);
@@ -71,11 +76,12 @@ public class MyNewCraft {
         Texture texture = AtlasGenerator.generate(new Identifier(GAME_ID, "block"));
         Blocks.register();
 
-        World world = new World(new Random().nextLong(), 32.0, PlayerEntity.SURVIVAL_GAMEMODE);
+        World world = new World(new Random().nextLong(), 32.0, PlayerEntity.CREATIVE_GAMEMODE);
+        WorldGenGui worldGenGui = new WorldGenGui();
 
         LOGGER.debug("Seed: " + world.SEED);
 
-        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 128.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0 * 8.0, 4.0, 9.0, 16);
+        PlayerEntity playerEntity = new PlayerEntity(world, new CubeCollider(new Vector3d(0.0, 320.0, 0.0), new Vector3d(0.6, 1.8, 0.6)), new Vector3d(), 1.0, 3.0 * 8.0, 4.0, 9.0);
 
         BlockSelection selection = new BlockSelection();
 
@@ -100,10 +106,8 @@ public class MyNewCraft {
             if(keyboard.getPress(Keyboard.KEY_F3)) {
                 if(keyboard.getClick(Keyboard.KEY_T))
                     texture = AtlasGenerator.generate(new Identifier(GAME_ID, "block"));
-                if(keyboard.getClick(Keyboard.KEY_R)) {
+                if(keyboard.getClick(Keyboard.KEY_R))
                     worldShader = new WorldShader(window, GAME_ID);
-                    playerEntity.direction.y = 0.0;
-                }
                 if(keyboard.getClick(Keyboard.KEY_F4)) {
                     playerEntity.setGameMode(playerEntity.getGameMode() + 1);
 
@@ -111,7 +115,14 @@ public class MyNewCraft {
                     discordRPC.Discord_UpdatePresence(discordRichPresence);
                 }
             }
-            if(keyboard.getClick(Keyboard.KEY_R)) playerEntity.collider.position.set(new Random().nextDouble(0.0, world.SPAWN_AREA), 128.0, new Random().nextDouble(0.0, world.SPAWN_AREA));
+            if(keyboard.getClick(Keyboard.KEY_R)) {
+                playerEntity.collider.position.set(new Random().nextDouble(0.0, world.SPAWN_AREA), 128.0, new Random().nextDouble(0.0, world.SPAWN_AREA));
+                playerEntity.direction.y = 0.0;
+            }
+            if(keyboard.getClick(Keyboard.KEY_F9)) {
+                worldGenGui.enable(worldGenGui.getDisabled());
+                mouse.grab(worldGenGui.getDisabled());
+            }
             if(keyboard.getClick(Keyboard.KEY_F11)) window.setFullscreen(!window.getFullscreen());
             if(keyboard.getClick(Keyboard.KEY_ESCAPE)) mouse.grab(!mouse.getGrabbed());
 
@@ -121,15 +132,15 @@ public class MyNewCraft {
             int chunkX = (int) (playerEntity.collider.position.x() / 16.0);
             int chunkZ = (int) (playerEntity.collider.position.z() / 16.0);
 
-            for(int i = chunkX - playerEntity.getViewDistance() / 2; i < chunkX + playerEntity.getViewDistance() / 2; i++)
-                for(int j = chunkZ - playerEntity.getViewDistance() / 2; j < chunkZ + playerEntity.getViewDistance() / 2; j++)
-                    if(new Vector2d(i, j).distance(chunkX, chunkZ) <= playerEntity.getViewDistance() / 2.0 && world.getChunk(new Vector2i(i, j)) == null && world.CHUNKS_TO_LOAD.get(new Vector2i(i, j)) == null)
+            for(int i = chunkX - viewDistance / 2; i < chunkX + viewDistance / 2; i++)
+                for(int j = chunkZ - viewDistance / 2; j < chunkZ + viewDistance / 2; j++)
+                    if(new Vector2d(i, j).distance(chunkX, chunkZ) <= viewDistance / 2.0 && world.getChunk(new Vector2i(i, j)) == null && world.CHUNKS_TO_LOAD.get(new Vector2i(i, j)) == null)
                         world.loadChunk(new Vector2i(i, j));
 
             for(Vector2i key : world.CHUNKS.keySet()) {
-                if(new Vector2d(key).distance(chunkX, chunkZ) > playerEntity.getViewDistance() / 2.0 && world.CHUNKS_TO_REMOVE.get(key) == null)
+                if(new Vector2d(key).distance(chunkX, chunkZ) > viewDistance / 2.0 && world.CHUNKS_TO_REMOVE.get(key) == null)
                     world.removeChunk(key);
-                if(new Vector2d(key).distance(chunkX, chunkZ) <= playerEntity.getViewDistance() / 2.0 && world.getChunk(key) != null && CHUNK_MESHES.get(key) == null)
+                if(new Vector2d(key).distance(chunkX, chunkZ) <= viewDistance / 2.0 && world.getChunk(key) != null && CHUNK_MESHES.get(key) == null)
                     CHUNK_MESHES.put(key, ChunkMeshBuilder.build(world.getChunk(key)));
             }
 
@@ -138,7 +149,7 @@ public class MyNewCraft {
             worldShader.view(new Vector3d(playerEntity.collider.position).add(new Vector3d(playerEntity.collider.scale.x() / 2.0, playerEntity.collider.scale.y() - 0.2, playerEntity.collider.scale.z() / 2.0)), playerEntity.rotation);
 
             for(Vector2i key : new ArrayList<>(CHUNK_MESHES.keySet())) {
-                if(new Vector2d(key).distance(chunkX, chunkZ) <= playerEntity.getViewDistance() / 2.0) {
+                if(new Vector2d(key).distance(chunkX, chunkZ) <= viewDistance / 2.0) {
                     Mesh chunkMesh = CHUNK_MESHES.get(key);
                     chunkMesh.load();
 
@@ -157,6 +168,12 @@ public class MyNewCraft {
             selection.unload();
 
             worldShader.unload();
+
+            window.imGuiBegin();
+            worldGenGui.render(window, world, time);
+
+            window.imGuiEnd();
+            worldGenGui.clear();
         }
 
         discordRPC.Discord_Shutdown();

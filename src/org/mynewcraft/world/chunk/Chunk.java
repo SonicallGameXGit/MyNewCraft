@@ -1,10 +1,8 @@
 package org.mynewcraft.world.chunk;
 
-import com.flowpowered.noise.Noise;
-import com.flowpowered.noise.NoiseQuality;
+import org.auburn.fnl.FastNoiseLite;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
-import org.mynewcraft.engine.math.MathUtil;
 import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.block.Blocks;
@@ -13,47 +11,47 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-
 public class Chunk {
-    private final long seed;
-
     private final Vector2i offset;
     private final HashMap<Vector3i, AbstractBlock> blocks = new HashMap<>();
-
     public final HashMap<Vector3i, Boolean> abstractOutline = new HashMap<>();
 
     public final ArrayList<CubeCollider> interactiveBlocks = new ArrayList<>();
 
+    private final long seed;
     private boolean changed;
 
-    public Chunk(Vector2i offset, long seed) {
+    public static FastNoiseLite worldGenNoise;
+    public static FastNoiseLite caveGenNoise;
+    public static FastNoiseLite riverGenNoise;
+
+    public Chunk(Vector2i offset) {
         this.offset = offset;
-        this.seed = seed;
+
+        seed = worldGenNoise.mSeed;
 
         for(int x = -1; x < 17; x++) {
             for(int z = -1; z < 17; z++) {
-                boolean notOutline = x != -1 && z != -1 && x != 16 && z != 16;
-
                 int ox = offset.x() * 16 + x;
                 int oz = offset.y() * 16 + z;
+                int height = (int) ((worldGenNoise.GetNoise(ox / 2.5f, oz / 2.5f) + 1.0) * 128.0);
 
-                double mountainsHeight = Noise.gradientCoherentNoise3D(ox / 64.0, 0, oz / 64.0, (int) seed, NoiseQuality.FAST) * 64.0 + 128.0;
-                mountainsHeight += Noise.gradientCoherentNoise3D(ox / 32.0, 0, oz / 32.0, (int) seed, NoiseQuality.FAST) * 16.0;
-                mountainsHeight += Noise.gradientCoherentNoise3D(ox / 16.0, 0, oz / 16.0, (int) seed, NoiseQuality.FAST) * 4.0;
-                double plainsHeight = Noise.gradientCoherentNoise3D(ox / 72.0, 0, oz / 72.0, (int) seed, NoiseQuality.FAST) * 5.0 + 128.0;
-                double height = MathUtil.smooth(mountainsHeight, plainsHeight, Noise.gradientCoherentNoise3D(ox / 256.0, 0, oz / 256.0, (int) seed, NoiseQuality.FAST) + 0.4);
+                boolean notOutline = x != -1 && z != -1 && x != 16 && z != 16;
 
-                for(int y = 1; y < height; y++) {
-                    AbstractBlock block = Blocks.STONE;
+                for(int i = 1; i < height; i++) {
+                    double inRiver = riverGenNoise.GetNoise(ox, oz);
 
-                    if(y >= height - new Random(seed + ox * 38506L + oz * 101950L).nextDouble() * 5.0 - 1.0)
-                        block = Blocks.DIRT;
-                    if(y >= height - 1) block = Blocks.GRASS_BLOCK;
+                    if((caveGenNoise.GetNoise(ox, i, oz) <= 0.1 || caveGenNoise.GetNoise(ox / 7.0f, i / 7.0f, oz / 7.0f) >= -0.2) && inRiver >= (i - height) / 64.0) {
+                        AbstractBlock block = Blocks.STONE;
+                        if(i >= height - new Random(worldGenNoise.mSeed + ox * 34829L + oz * 339204L).nextInt(0, 7))
+                            block = Blocks.DIRT;
+                        if(i == height - 1)
+                            block = Blocks.GRASS_BLOCK;
+                        if(inRiver >= (height / (i - 3.0)) - new Random(worldGenNoise.mSeed + ox * 394930L + oz * 94830L).nextDouble() * 0.1 + 0.3)
+                            block = Blocks.SAND;
 
-                    if(y >= 100 || Noise.valueCoherentNoise3D(ox / 10.0, y / 10.0, oz / 10.0, (int) seed, NoiseQuality.FAST) <= 0.5) {
-                        if(notOutline)
-                            blocks.put(new Vector3i(x, y, z), block);
-                        else abstractOutline.put(new Vector3i(x, y, z), true);
+                        if(notOutline) blocks.put(new Vector3i(x, i, z), block);
+                        else abstractOutline.put(new Vector3i(x, i, z), true);
                     }
                 }
 
@@ -65,17 +63,17 @@ public class Chunk {
         changed = false;
     }
 
-    public void placeBlock(Vector3i coordinate, AbstractBlock block) {
+    public boolean placeBlock(Vector3i coordinate, AbstractBlock block) {
         if(!blocks.containsKey(coordinate)) {
-            if(coordinate.x() >= 0 && coordinate.x() <= getOffset().x() + 16) {
-                if(coordinate.y() >= 0) {
-                    if(coordinate.z() >= 0 && coordinate.z() <= getOffset().y() + 16) {
-                        blocks.put(coordinate, block);
-                        changed = true;
-                    }
-                }
+            if(coordinate.y() >= 0) {
+                blocks.put(coordinate, block);
+                changed = true;
+
+                return true;
             }
         }
+
+        return false;
     }
     public void removeBlock(Vector3i coordinate) {
         blocks.remove(coordinate);
@@ -92,10 +90,6 @@ public class Chunk {
 
     public Vector2i getOffset() {
         return offset;
-    }
-
-    public long getSeed() {
-        return seed;
     }
 
     public boolean getChanged() {
@@ -115,5 +109,9 @@ public class Chunk {
     }
     public void removeAbstractOutlineBlock(Vector3i coordinate) {
         abstractOutline.remove(coordinate);
+    }
+
+    public long getSeed() {
+        return seed;
     }
 }

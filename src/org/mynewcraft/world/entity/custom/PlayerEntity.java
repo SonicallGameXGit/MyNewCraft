@@ -24,8 +24,6 @@ public class PlayerEntity extends LivingEntity {
     public static final int CREATIVE_GAMEMODE = 1;
     public static final int SPECTATOR_GAMEMODE = 2;
 
-    private final int VIEW_DISTANCE;
-
     protected static final double FLY_JUMP_FREQUENCY = 0.6;
 
     public Camera camera;
@@ -38,12 +36,10 @@ public class PlayerEntity extends LivingEntity {
     private int jumpClicks;
     private long lastJumpTime;
 
-    public PlayerEntity(World world, CubeCollider collider, Vector3d rotation, double mass, double speed, double flySpeedMultiplier, double jumpPower, int viewDistance) {
+    public PlayerEntity(World world, CubeCollider collider, Vector3d rotation, double mass, double speed, double flySpeedMultiplier, double jumpPower) {
         super(collider, rotation, mass, speed, jumpPower);
 
         this.flySpeedMultiplier = flySpeedMultiplier;
-
-        VIEW_DISTANCE = viewDistance;
 
         camera = new Camera(new Vector3d(collider.position.x() + collider.scale.x() / 2.0, collider.position.y + collider.scale.y() / 1.125, collider.position.z() + collider.scale.z() / 2.0), new Vector3d());
         gameMode = world.DEFAULT_GAMEMODE;
@@ -152,9 +148,5 @@ public class PlayerEntity extends LivingEntity {
 
     public String getGameModeName(int gameMode) {
         return gameMode == SURVIVAL_GAMEMODE ? "survival" : gameMode == CREATIVE_GAMEMODE ? "creative" : "spectator";
-    }
-
-    public int getViewDistance() {
-        return VIEW_DISTANCE;
     }
 }
