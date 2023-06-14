@@ -1,4 +1,4 @@
-package org.mynewcraft.client.client;
+package org.mynewcraft.client.graphics.gui;
 
 import imgui.ImGui;
 import imgui.ImGuiStyle;
@@ -86,7 +86,7 @@ public class WorldGenGui {
         style.setPopupRounding(0.0f);
         style.setPopupBorderSize(1.0f);
         style.setFramePadding(6.0f, 6.0f);
-        style.setFrameRounding(0.0f);
+        style.setFrameRounding(12.0f);
         style.setFrameBorderSize(0.0f);
         style.setItemSpacing(12.0f, 6.0f);
         style.setItemInnerSpacing(6.0f, 3.0f);
@@ -96,7 +96,7 @@ public class WorldGenGui {
         style.setScrollbarSize(24.0f);
         style.setScrollbarRounding(64.0f);
         style.setGrabMinSize(12.0f);
-        style.setGrabRounding(0.0f);
+        style.setGrabRounding(6.0f);
         style.setTabRounding(0.0f);
         style.setTabBorderSize(0.0f);
         style.setTabMinWidthForCloseButton(0.0f);
@@ -168,8 +168,10 @@ public class WorldGenGui {
         worldChanged = false;
 
         if(enabled) {
+            ImGui.getStyle().setWindowPadding(12.0f, 12.0f);
+            ImGui.getFont().setScale(0.5f);
             ImGui.begin("WorldGenGui", ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove);
-            ImGui.setWindowSize(800.0f, (float) window.getScale().y());
+            ImGui.setWindowSize(550.0f, (float) window.getScale().y());
             ImGui.setWindowPos(0.0f, 0.0f);
 
             ImGui.setCursorPosX(((float) window.getScale().x() * 0.2f - ImGui.calcTextSize(" - World Generator - ").x) / 2.0f);
@@ -322,17 +324,13 @@ public class WorldGenGui {
 
             ImGui.separator();
 
-            if(worldChanged) {
-                Wg.worldPreviewId.clear();
-                Wg.worldPreviewId = generatePreview(Chunk.worldGenNoise);
-            }
             if(ImGui.arrowButton("enable_height_map_preview", Wg.previewEnabled ? ImGuiDir.Down : ImGuiDir.Right))
                 Wg.previewEnabled = !Wg.previewEnabled;
 
             ImGui.sameLine();
             ImGui.text("Height Map");
 
-            if(Wg.previewEnabled) ImGui.image(Wg.worldPreviewId.getId(), 800.0f, 800.0f);
+            if(Wg.previewEnabled) ImGui.image(Wg.worldPreviewId.getId(), 400.0f, 400.0f);
 
             Cg.worldPreviewId = generatePreview3d(Cg.worldPreviewId, Chunk.caveGenNoise, Cg.previewOffset);
             if(ImGui.arrowButton("enable_cave_map_preview", Cg.previewEnabled ? ImGuiDir.Down : ImGuiDir.Right))
@@ -341,7 +339,7 @@ public class WorldGenGui {
             ImGui.sameLine();
             ImGui.text("Cave Map");
 
-            if(Cg.previewEnabled) ImGui.image(Cg.worldPreviewId.getId(), 800.0f, 800.0f);
+            if(Cg.previewEnabled) ImGui.image(Cg.worldPreviewId.getId(), 400.0f, 400.0f);
 
             Cg.previewOffset += 5.0 * time.getDelta();
 
@@ -350,6 +348,11 @@ public class WorldGenGui {
     }
 
     public void clear() {
+        if(worldChanged) {
+            Wg.worldPreviewId.clear();
+            Wg.worldPreviewId = generatePreview(Chunk.worldGenNoise);
+        }
+
         Cg.worldPreviewId.clear();
     }
 
@@ -360,10 +363,8 @@ public class WorldGenGui {
     private void clearWorld(World world) {
         MyNewCraft.CHUNK_MESHES.clear();
 
-        Chunk.caveGenNoise.SetSeed(Chunk.worldGenNoise.mSeed);
-        Chunk.riverGenNoise.SetSeed(Chunk.worldGenNoise.mSeed);
-
         world.clear();
+        world.chunkGenThread.clearAll();
         MyNewCraft.LOGGER.debug("Seed: " + world.SEED);
     }
 
@@ -494,6 +495,8 @@ public class WorldGenGui {
         for(float x = 0; x < texture.getWidth(); x += 1) {
             for(float y = 0; y < texture.getHeight(); y += 1) {
                 float brightness = noise.GetNoise(x, (float) offset, y) / 2.0f + 0.5f;
+                brightness = Math.min(brightness, 1.0f);
+                brightness = Math.max(brightness, 0.0f);
 
                 graphics.setColor(new Color(brightness, brightness, brightness));
                 graphics.fillRect((int) x, (int) y, (int) x + 1, (int) y + 1);

@@ -13,7 +13,7 @@ public class MathUtil {
         Vector2d windowResolution = window.getScale();
 
         double aspect = windowResolution.x() / windowResolution.y();
-        double scaleY = (1.0 / Math.tan(Math.toRadians(fieldOfView / 2.0))) * aspect;
+        double scaleY = 1.0 / Math.tan(Math.toRadians(fieldOfView / 2.0));
         double scaleX = scaleY / aspect;
         double frustum = far - near;
 

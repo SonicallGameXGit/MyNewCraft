@@ -65,6 +65,9 @@ public class Mouse {
         scrollDirection.set(new Vector2d(scroll).sub(lastScroll));
         lastScroll.set(new Vector2d(scroll));
     }
+    public void setPosition(Vector2d position) {
+        GLFW.glfwSetCursorPos(window.getId(), position.x(), position.y());
+    }
 
     public Vector2d getPosition() {
         double[] x = new double[1];

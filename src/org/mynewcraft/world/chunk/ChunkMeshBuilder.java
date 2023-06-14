@@ -6,22 +6,30 @@ import org.joml.Vector3i;
 import org.mynewcraft.engine.graphics.mesh.Mesh;
 import org.mynewcraft.engine.graphics.mesh.MeshBuffer;
 import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
-import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.world.block.AbstractBlock;
+import org.mynewcraft.world.block.BlockCollider;
+import org.mynewcraft.world.block.custom.Block;
+import org.mynewcraft.world.entity.custom.LivingEntity;
+import org.mynewcraft.world.entity.custom.PlayerEntity;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class ChunkMeshBuilder {
-    public static Mesh build(Chunk chunk) {
-        List<Vector3d> vertexList = new ArrayList<>();
-        List<Vector2d> texcoordList = new ArrayList<>();
-        List<Vector3d> normalList = new ArrayList<>();
+    public static Mesh[] build(Chunk chunk) {
+        ArrayList<Vector3d> vertexList = new ArrayList<>();
+        ArrayList<Vector2d> texcoordList = new ArrayList<>();
+        ArrayList<Vector3d> normalList = new ArrayList<>();
+        ArrayList<Float> alphaList = new ArrayList<>();
+        ArrayList<Float> aoLevelList = new ArrayList<>();
 
-        Map<Vector3i, AbstractBlock> blocks = chunk.getMap();
-        Map<Vector3i, Boolean> abstractOutline = chunk.getAbstractOutline();
+        ArrayList<Vector3d> vertexListA = new ArrayList<>();
+        ArrayList<Vector2d> texcoordListA = new ArrayList<>();
+        ArrayList<Vector3d> normalListA = new ArrayList<>();
+        ArrayList<Float> alphaListA = new ArrayList<>();
+        ArrayList<Float> aoLevelListA = new ArrayList<>();
+
+        HashMap<Vector3i, Integer> blocks = chunk.getMap();
+        HashMap<Vector3i, Integer> abstractOutline = chunk.getAbstractOutline();
 
         chunk.interactiveBlocks.clear();
 
@@ -30,241 +38,421 @@ public class ChunkMeshBuilder {
             int y = coordinate.y();
             int z = coordinate.z();
 
-            AbstractBlock block = blocks.get(coordinate);
+            AbstractBlock block = AbstractBlock.getByIndex(blocks.get(coordinate));
 
-            boolean faceCreated = false;
-            if(!blocks.containsKey(new Vector3i(x, y, z + 1)) && !abstractOutline.containsKey(new Vector3i(x, y, z + 1))) {
-                vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x, y, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
+            boolean faceCreated;
+            if(block instanceof Block && ((Block) block).getTransparency() > 0.0)
+                faceCreated = buildFace(chunk, blocks, abstractOutline, vertexListA, texcoordListA, normalListA, alphaListA, aoLevelListA, x, y, z, block);
+            else faceCreated = buildFace(chunk, blocks, abstractOutline, vertexList, texcoordList, normalList, alphaList, aoLevelList, x, y, z, block);
 
-                double tx = block.getTexcoord()[0];
+            if(faceCreated) {
+                if(!(block instanceof Block))
+                    chunk.interactiveBlocks.add(new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0)));
+                else {
+                    BlockCollider collider = new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0));
+                    if(((Block) block).getPassable())
+                        collider.addTag(LivingEntity.PASSABLE_TAG);
+                    if(((Block) block).getWaterLike())
+                        collider.addTag(LivingEntity.WATER_LIKE_TAG);
+                    if(((Block) block).getRaycastIgnore())
+                        collider.addTag(PlayerEntity.IGNORE_RAYCAST_TAG);
 
-                if(!block.getNaturalTexture()[0] || !new Random(chunk.getSeed() + x * 293052L + y * 392050L + (z + 1) * 505940L).nextBoolean()) {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                } else {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                    chunk.interactiveBlocks.add(collider);
                 }
+            } if(block instanceof Block blockB) {
+                if(blockB.getWaterLike()) {
+                    BlockCollider collider = new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0)).addTag(LivingEntity.WATER_LIKE_TAG);
+                    if(blockB.getRaycastIgnore())
+                        collider.addTag(PlayerEntity.IGNORE_RAYCAST_TAG);
+                    if(blockB.getPassable())
+                        collider.addTag(LivingEntity.PASSABLE_TAG);
 
-                normalList.add(new Vector3d(0.0, 0.0, 1.0));
-                normalList.add(new Vector3d(0.0, 0.0, 1.0));
-                normalList.add(new Vector3d(0.0, 0.0, 1.0));
-                normalList.add(new Vector3d(0.0, 0.0, 1.0));
-                normalList.add(new Vector3d(0.0, 0.0, 1.0));
-                normalList.add(new Vector3d(0.0, 0.0, 1.0));
-
-                faceCreated = true;
-            }
-            if(!blocks.containsKey(new Vector3i(x, y, z - 1)) && !abstractOutline.containsKey(new Vector3i(x, y, z - 1))) {
-                vertexList.add(new Vector3d(x, y + 1.0, z));
-                vertexList.add(new Vector3d(x + 1.0, y, z));
-                vertexList.add(new Vector3d(x, y, z));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
-                vertexList.add(new Vector3d(x + 1.0, y, z));
-                vertexList.add(new Vector3d(x, y + 1.0, z));
-
-                double tx = block.getTexcoord()[1];
-
-                if(!block.getNaturalTexture()[1] || !new Random(chunk.getSeed() + x * 293052L + y * 392050L + (z - 1) * 505940L).nextBoolean()) {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                } else {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
+                    chunk.interactiveBlocks.add(collider);
                 }
-
-                normalList.add(new Vector3d(0.0, 0.0, -1.0));
-                normalList.add(new Vector3d(0.0, 0.0, -1.0));
-                normalList.add(new Vector3d(0.0, 0.0, -1.0));
-                normalList.add(new Vector3d(0.0, 0.0, -1.0));
-                normalList.add(new Vector3d(0.0, 0.0, -1.0));
-                normalList.add(new Vector3d(0.0, 0.0, -1.0));
-
-                faceCreated = true;
+                if(!blockB.getStatic())
+                    chunk.notStaticBlocks.put(new Vector3i(x, y, z), block.getIndex());
             }
-            if(!blocks.containsKey(new Vector3i(x, y + 1, z)) && !abstractOutline.containsKey(new Vector3i(x, y + 1, z))) {
-                vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
-                vertexList.add(new Vector3d(x, y + 1.0, z));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
-                vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
-
-                double tx = block.getTexcoord()[2];
-
-                if(!block.getNaturalTexture()[2] || !new Random(chunk.getSeed() + x * 293052L + (y + 1) * 392050L + z * 505940L).nextBoolean()) {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                } else {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                }
-
-                normalList.add(new Vector3d(0.0, 1.0, 0.0));
-                normalList.add(new Vector3d(0.0, 1.0, 0.0));
-                normalList.add(new Vector3d(0.0, 1.0, 0.0));
-                normalList.add(new Vector3d(0.0, 1.0, 0.0));
-                normalList.add(new Vector3d(0.0, 1.0, 0.0));
-                normalList.add(new Vector3d(0.0, 1.0, 0.0));
-
-                faceCreated = true;
-            }
-            if(!blocks.containsKey(new Vector3i(x, y - 1, z)) && !abstractOutline.containsKey(new Vector3i(x, y - 1, z))) {
-                vertexList.add(new Vector3d(x, y, z + 1.0));
-                vertexList.add(new Vector3d(x, y, z));
-                vertexList.add(new Vector3d(x + 1.0, y, z));
-                vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
-                vertexList.add(new Vector3d(x, y, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y, z));
-
-                double tx = block.getTexcoord()[3];
-
-                if(!block.getNaturalTexture()[3] || !new Random(chunk.getSeed() + x * 293052L + (y - 1) * 392050L + z * 505940L).nextBoolean()) {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                } else {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                }
-
-                normalList.add(new Vector3d(0.0, -1.0, 0.0));
-                normalList.add(new Vector3d(0.0, -1.0, 0.0));
-                normalList.add(new Vector3d(0.0, -1.0, 0.0));
-                normalList.add(new Vector3d(0.0, -1.0, 0.0));
-                normalList.add(new Vector3d(0.0, -1.0, 0.0));
-                normalList.add(new Vector3d(0.0, -1.0, 0.0));
-
-                faceCreated = true;
-            }
-            if(!blocks.containsKey(new Vector3i(x + 1, y, z)) && !abstractOutline.containsKey(new Vector3i(x + 1, y, z))) {
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
-                vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y, z));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
-                vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
-
-                double tx = block.getTexcoord()[4];
-
-                if(!block.getNaturalTexture()[4] || !new Random(chunk.getSeed() + (x + 1) * 293052L + y * 392050L + z * 505940L).nextBoolean()) {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                } else {
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                }
-
-                normalList.add(new Vector3d(1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(1.0, 0.0, 0.0));
-
-                faceCreated = true;
-            }
-            if(!blocks.containsKey(new Vector3i(x - 1, y, z)) && !abstractOutline.containsKey(new Vector3i(x - 1, y, z))) {
-                vertexList.add(new Vector3d(x, y, z));
-                vertexList.add(new Vector3d(x, y, z + 1.0));
-                vertexList.add(new Vector3d(x, y + 1.0, z));
-                vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
-                vertexList.add(new Vector3d(x, y + 1.0, z));
-                vertexList.add(new Vector3d(x, y, z + 1.0));
-
-                double tx = block.getTexcoord()[5];
-
-                if(!block.getNaturalTexture()[5] || !new Random(chunk.getSeed() + (x - 1) * 293052L + y * 392050L + z * 505940L).nextBoolean()) {
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                } else {
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx, 1.0));
-                    texcoordList.add(new Vector2d(tx, 0.0));
-                    texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
-                }
-
-                normalList.add(new Vector3d(-1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(-1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(-1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(-1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(-1.0, 0.0, 0.0));
-                normalList.add(new Vector3d(-1.0, 0.0, 0.0));
-
-                faceCreated = true;
-            }
-            if(faceCreated)
-                chunk.interactiveBlocks.add(new CubeCollider(new Vector3d(x, y, z), new Vector3d(1.0)));
         }
 
-        float[] vertices = new float[vertexList.size() * 3];
-        for(int i = 0; i < vertexList.size(); i++) {
-            vertices[i * 3] = (float) vertexList.get(i).x();
-            vertices[i * 3 + 1] = (float) vertexList.get(i).y();
-            vertices[i * 3 + 2] = (float) vertexList.get(i).z();
-        }
-        float[] texcoords = new float[texcoordList.size() * 2];
-        for(int i = 0; i < texcoordList.size(); i++) {
-            texcoords[i * 2] = (float) texcoordList.get(i).x();
-            texcoords[i * 2 + 1] = (float) texcoordList.get(i).y();
-        }
-        float[] normals = new float[normalList.size() * 3];
-        for(int i = 0; i < normalList.size(); i++) {
-            normals[i * 3] = (float) normalList.get(i).x();
-            normals[i * 3 + 1] = (float) normalList.get(i).y();
-            normals[i * 3 + 2] = (float) normalList.get(i).z();
+        float[] vertices = getArray3d(vertexList);
+        float[] verticesA = getArray3d(vertexListA);
+        float[] texcoords = getArray2d(texcoordList);
+        float[] texcoordsA = getArray2d(texcoordListA);
+        float[] normals = getArray3d(normalList);
+        float[] normalsA = getArray3d(normalListA);
+        float[] alphas = getArray(alphaList);
+        float[] alphasA = getArray(alphaListA);
+        float[] aoLevels = getArray(aoLevelList);
+        float[] aoLevelsA = new float[aoLevels.length];
+
+        vertexList.clear();
+        vertexListA.clear();
+        texcoordList.clear();
+        texcoordListA.clear();
+        normalList.clear();
+        normalListA.clear();
+        alphaList.clear();
+        alphaListA.clear();
+        aoLevelList.clear();
+        aoLevelListA.clear();
+
+        chunk.meshGenerated = true;
+
+        return new Mesh[] {
+                new Mesh(null, new MeshBuffer(vertices, 3), new MeshBuffer(texcoords, 2), new MeshBuffer[] { new MeshBuffer(normals, 3), new MeshBuffer(alphas, 1), new MeshBuffer(aoLevels, 1) }, Mesh.TRIANGLE_FAN, false),
+                new Mesh(null, new MeshBuffer(verticesA, 3), new MeshBuffer(texcoordsA, 2), new MeshBuffer[] { new MeshBuffer(normalsA, 3), new MeshBuffer(alphasA, 1), new MeshBuffer(aoLevelsA, 1) }, Mesh.TRIANGLE_FAN, false)
+        };
+    }
+
+    private static float[] getArray(ArrayList<Float> list) {
+        float[] array = new float[list.size()];
+        for(int i = 0; i < array.length; i++) array[i] = list.get(i);
+
+        return array;
+    }
+    private static float[] getArray2d(ArrayList<Vector2d> list) {
+        float[] array = new float[list.size() * 2];
+        for(int i = 0; i < list.size(); i++) {
+            array[i * 2] = (float) list.get(i).x();
+            array[i * 2 + 1] = (float) list.get(i).y();
         }
 
-        return new Mesh(null, vertices, texcoords, new MeshBuffer[] { new MeshBuffer(normals, 3) }, Mesh.TRIANGLES, false);
+        return array;
+    }
+    private static float[] getArray3d(ArrayList<Vector3d> list) {
+        float[] array = new float[list.size() * 3];
+        for(int i = 0; i < list.size(); i++) {
+            array[i * 3] = (float) list.get(i).x();
+            array[i * 3 + 1] = (float) list.get(i).y();
+            array[i * 3 + 2] = (float) list.get(i).z();
+        }
+
+        return array;
+    }
+
+    private static boolean buildFace(Chunk chunk, HashMap<Vector3i, Integer> blocks, HashMap<Vector3i, Integer> abstractOutline, List<Vector3d> vertexList, List<Vector2d> texcoordList, List<Vector3d> normalList, List<Float> alphaList, List<Float> aoLevelList, int x, int y, int z, AbstractBlock block) {
+        boolean faceCreated = false;
+
+        if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x, y, z + 1))) {
+            vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x, y, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
+
+            //!
+            float aoLevel = 0.0f;
+            if(chunk.containsBlock(new Vector3i(x, y + 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x - 1, y + 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x - 1, y, z + 1)))
+                aoLevel++;
+            aoLevelList.add(aoLevel);
+
+            //!
+            aoLevel = 0.0f;
+            if(chunk.containsBlock(new Vector3i(x, y - 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x - 1, y - 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x - 1, y, z + 1)))
+                aoLevel++;
+            aoLevelList.add(aoLevel);
+
+            //!
+            aoLevel = 0.0f;
+            if(chunk.containsBlock(new Vector3i(x + 1, y - 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x, y - 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x + 1, y, z + 1)))
+                aoLevel++;
+            aoLevelList.add(aoLevel);
+
+            //>
+            aoLevel = 0.0f;
+            if(chunk.containsBlock(new Vector3i(x + 1, y + 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x, y + 1, z + 1)))
+                aoLevel++;
+            if(chunk.containsBlock(new Vector3i(x + 1, y, z + 1)))
+                aoLevel++;
+            aoLevelList.add(aoLevel);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+
+            double tx = block.getTexcoord()[0];
+
+            if(!block.getNaturalTexture()[0] || !new Random(chunk.getSeed() + x * 293052L + y * 392050L + (z + 1) * 505940L).nextBoolean()) {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+            } else {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+            }
+
+            normalList.add(new Vector3d(0.0, 0.0, 1.0));
+            normalList.add(new Vector3d(0.0, 0.0, 1.0));
+            normalList.add(new Vector3d(0.0, 0.0, 1.0));
+            normalList.add(new Vector3d(0.0, 0.0, 1.0));
+            normalList.add(new Vector3d(0.0, 0.0, 1.0));
+            normalList.add(new Vector3d(0.0, 0.0, 1.0));
+
+            buildTransparency(alphaList, block);
+
+            faceCreated = true;
+        }
+        if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x, y, z - 1))) {
+            vertexList.add(new Vector3d(x, y + 1.0, z));
+            vertexList.add(new Vector3d(x + 1.0, y, z));
+            vertexList.add(new Vector3d(x, y, z));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
+            vertexList.add(new Vector3d(x + 1.0, y, z));
+            vertexList.add(new Vector3d(x, y + 1.0, z));
+
+            double tx = block.getTexcoord()[1];
+
+            if(!block.getNaturalTexture()[1] || !new Random(chunk.getSeed() + x * 293052L + y * 392050L + (z - 1) * 505940L).nextBoolean()) {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+            } else {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+            }
+
+            normalList.add(new Vector3d(0.0, 0.0, -1.0));
+            normalList.add(new Vector3d(0.0, 0.0, -1.0));
+            normalList.add(new Vector3d(0.0, 0.0, -1.0));
+            normalList.add(new Vector3d(0.0, 0.0, -1.0));
+            normalList.add(new Vector3d(0.0, 0.0, -1.0));
+            normalList.add(new Vector3d(0.0, 0.0, -1.0));
+
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+
+            buildTransparency(alphaList, block);
+
+            faceCreated = true;
+        }
+        if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x, y + 1, z))) {
+            vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
+            vertexList.add(new Vector3d(x, y + 1.0, z));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
+            vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
+
+            double tx = block.getTexcoord()[2];
+
+            if(!block.getNaturalTexture()[2] || !new Random(chunk.getSeed() + x * 293052L + (y + 1) * 392050L + z * 505940L).nextBoolean()) {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+            } else {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+            }
+
+            normalList.add(new Vector3d(0.0, 1.0, 0.0));
+            normalList.add(new Vector3d(0.0, 1.0, 0.0));
+            normalList.add(new Vector3d(0.0, 1.0, 0.0));
+            normalList.add(new Vector3d(0.0, 1.0, 0.0));
+            normalList.add(new Vector3d(0.0, 1.0, 0.0));
+            normalList.add(new Vector3d(0.0, 1.0, 0.0));
+
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+
+            buildTransparency(alphaList, block);
+
+            faceCreated = true;
+        }
+        if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x, y - 1, z))) {
+            vertexList.add(new Vector3d(x, y, z + 1.0));
+            vertexList.add(new Vector3d(x, y, z));
+            vertexList.add(new Vector3d(x + 1.0, y, z));
+            vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
+            vertexList.add(new Vector3d(x, y, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y, z));
+
+            double tx = block.getTexcoord()[3];
+
+            if(!block.getNaturalTexture()[3] || !new Random(chunk.getSeed() + x * 293052L + (y - 1) * 392050L + z * 505940L).nextBoolean()) {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+            } else {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+            }
+
+            normalList.add(new Vector3d(0.0, -1.0, 0.0));
+            normalList.add(new Vector3d(0.0, -1.0, 0.0));
+            normalList.add(new Vector3d(0.0, -1.0, 0.0));
+            normalList.add(new Vector3d(0.0, -1.0, 0.0));
+            normalList.add(new Vector3d(0.0, -1.0, 0.0));
+            normalList.add(new Vector3d(0.0, -1.0, 0.0));
+
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+
+            buildTransparency(alphaList, block);
+
+            faceCreated = true;
+        }
+        if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x + 1, y, z))) {
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
+            vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y, z));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
+            vertexList.add(new Vector3d(x + 1.0, y + 1.0, z));
+
+            double tx = block.getTexcoord()[4];
+
+            if(!block.getNaturalTexture()[4] || !new Random(chunk.getSeed() + (x + 1) * 293052L + y * 392050L + z * 505940L).nextBoolean()) {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+            } else {
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+            }
+
+            normalList.add(new Vector3d(1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(1.0, 0.0, 0.0));
+
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+
+            buildTransparency(alphaList, block);
+
+            faceCreated = true;
+        }
+        if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x - 1, y, z))) {
+            vertexList.add(new Vector3d(x, y, z));
+            vertexList.add(new Vector3d(x, y, z + 1.0));
+            vertexList.add(new Vector3d(x, y + 1.0, z));
+            vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
+            vertexList.add(new Vector3d(x, y + 1.0, z));
+            vertexList.add(new Vector3d(x, y, z + 1.0));
+
+            double tx = block.getTexcoord()[5];
+
+            if(!block.getNaturalTexture()[5] || !new Random(chunk.getSeed() + (x - 1) * 293052L + y * 392050L + z * 505940L).nextBoolean()) {
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+            } else {
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx, 1.0));
+                texcoordList.add(new Vector2d(tx, 0.0));
+                texcoordList.add(new Vector2d(tx + 1.0 / AtlasGenerator.BLOCKS_ATLAS_OFFSETS.size(), 1.0));
+            }
+
+            normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+            normalList.add(new Vector3d(-1.0, 0.0, 0.0));
+
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+            aoLevelList.add(0.0f);
+
+            buildTransparency(alphaList, block);
+
+            faceCreated = true;
+        }
+
+        return faceCreated;
+    }
+
+    private static void buildTransparency(List<Float> alphaList, AbstractBlock block) {
+        if(block instanceof Block settedBlock)
+            for(int i = 0; i < 6; i++)
+                alphaList.add((float) settedBlock.getTransparency());
+        else for(int i = 0; i < 6; i++) alphaList.add(0.0f);
+    }
+
+    private static boolean checkNeighbourBlock(Map<Vector3i, Integer> blocks, Map<Vector3i, Integer> abstractOutline, Vector3i blockPos, Vector3i neighbourPos) {
+        AbstractBlock block = AbstractBlock.getByIndex(blocks.get(blockPos));
+        AbstractBlock neighbour = !blocks.containsKey(neighbourPos) ? (!abstractOutline.containsKey(neighbourPos) ? null : AbstractBlock.getByIndex(abstractOutline.get(neighbourPos))) : AbstractBlock.getByIndex(blocks.get(neighbourPos));
+
+        if(neighbour != null) {
+            if(neighbour instanceof Block neighbourB) {
+                if(block instanceof Block blockB)
+                    return blockB.getTransparency() <= 0.0 && neighbourB.getTransparency() > 0.0;
+                else return neighbourB.getTransparency() > 0.0;
+            } else return false;
+        } else return true;
     }
 }

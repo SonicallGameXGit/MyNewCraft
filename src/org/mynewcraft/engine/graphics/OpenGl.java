@@ -1,6 +1,5 @@
 package org.mynewcraft.engine.graphics;
 
-import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.lwjgl.opengl.GL11;
 

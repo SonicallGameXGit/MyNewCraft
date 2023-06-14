@@ -22,10 +22,10 @@ public class Mesh {
 
     private int[] additionalIds;
 
-    public Mesh(int[] elements, float[] vertices, float[] texcoords, MeshBuffer[] additionalBuffers, int renderMode, boolean useEBO) {
+    public Mesh(int[] elements, MeshBuffer vertices, MeshBuffer texcoords, MeshBuffer[] additionalBuffers, int renderMode, boolean useEBO) {
         this.elements = elements;
         this.useEBO = useEBO;
-        this.verticesLength = vertices.length;
+        this.verticesLength = vertices.data().length / vertices.dimensions();
 
         RENDER_MODE = renderMode;
 
@@ -40,16 +40,16 @@ public class Mesh {
 
         VBOID = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, VBOID);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertices, GL15.GL_STATIC_DRAW);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertices.data(), GL15.GL_STATIC_DRAW);
 
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+        GL20.glVertexAttribPointer(0, vertices.dimensions(), GL11.GL_FLOAT, false, 0, 0);
 
         if(texcoords != null) {
             TBOID = GL15.glGenBuffers();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, TBOID);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, texcoords, GL15.GL_STATIC_DRAW);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, texcoords.data(), GL15.GL_STATIC_DRAW);
 
-            GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
+            GL20.glVertexAttribPointer(1, texcoords.dimensions(), GL11.GL_FLOAT, false, 0, 0);
         }
         if(additionalBuffers != null) {
             for(int i = 0; i < additionalBuffers.length; i++) {

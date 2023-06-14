@@ -2,79 +2,23 @@ package org.mynewcraft.engine.graphics.mesh;
 
 public class Shapes {
     public static final Mesh SQUARE = new Mesh(
-            new int[] { 0, 1, 2, 3 },
-            new float[] { 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f },
-            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+            null,
+            new MeshBuffer(new float[] {
+                    0.0f, 0.0f,
+                    1.0f, 0.0f,
+                    1.0f, 1.0f,
+                    0.0f, 1.0f
+            }, 2),
+            new MeshBuffer(new float[] {
+                    0.0f, 1.0f,
+                    1.0f, 1.0f,
+                    1.0f, 0.0f,
+                    0.0f, 0.0f
+            }, 2),
             null,
             Mesh.TRIANGLE_FAN,
-            true
+            false
     );
-//    public static final Mesh SQUARE_FRONT = new Mesh(
-//            new int[] { 0, 1, 3, 2, 3, 1 },
-//            new float[] {
-//                    0.0f, 0.0f, 1.0f,
-//                    1.0f, 0.0f, 1.0f,
-//                    1.0f, 1.0f, 1.0f,
-//                    0.0f, 1.0f, 1.0f
-//            },
-//            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-//            new MeshBuffer[] { new MeshBuffer(new float[] { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f }, 3) }
-//    );
-//    public static final Mesh SQUARE_BACK = new Mesh(
-//            new int[] { 0, 1, 3, 2, 3, 1 },
-//            new float[] {
-//                    0.0f, 0.0f, 0.0f,
-//                    1.0f, 0.0f, 0.0f,
-//                    1.0f, 1.0f, 0.0f,
-//                    0.0f, 1.0f, 0.0f
-//            },
-//            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-//            new MeshBuffer[] { new MeshBuffer(new float[] { 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f }, 3) }
-//    );
-//    public static final Mesh SQUARE_TOP = new Mesh(
-//            new int[] { 0, 1, 3, 2, 3, 1 },
-//            new float[] {
-//                    0.0f, 1.0f, 0.0f,
-//                    1.0f, 1.0f, 0.0f,
-//                    1.0f, 1.0f, 1.0f,
-//                    0.0f, 1.0f, 1.0f
-//            },
-//            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-//            new MeshBuffer[] { new MeshBuffer(new float[] { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f }, 3) }
-//    );
-//    public static final Mesh SQUARE_BOTTOM = new Mesh(
-//            new int[] { 0, 1, 3, 2, 3, 1 },
-//            new float[] {
-//                    0.0f, 0.0f, 0.0f,
-//                    1.0f, 0.0f, 0.0f,
-//                    1.0f, 0.0f, 1.0f,
-//                    0.0f, 0.0f, 1.0f
-//            },
-//            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-//            new MeshBuffer[] { new MeshBuffer(new float[] { 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f }, 3) }
-//    );
-//    public static final Mesh SQUARE_LEFT = new Mesh(
-//            new int[] { 0, 1, 3, 2, 3, 1 },
-//            new float[] {
-//                    0.0f, 0.0f, 0.0f,
-//                    0.0f, 1.0f, 0.0f,
-//                    0.0f, 1.0f, 1.0f,
-//                    0.0f, 0.0f, 1.0f
-//            },
-//            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-//            new MeshBuffer[] { new MeshBuffer(new float[] { -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f }, 3) }
-//    );
-//    public static final Mesh SQUARE_RIGHT = new Mesh(
-//            new int[] { 0, 1, 3, 2, 3, 1 },
-//            new float[] {
-//                    1.0f, 0.0f, 0.0f,
-//                    1.0f, 1.0f, 0.0f,
-//                    1.0f, 1.0f, 1.0f,
-//                    1.0f, 0.0f, 1.0f
-//            },
-//            new float[] { 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-//            new MeshBuffer[] { new MeshBuffer(new float[] { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f }, 3) }
-//    );
     public static final Mesh CUBE = new Mesh(
             new int[] {
                     0, 1, 3,
@@ -91,7 +35,7 @@ public class Shapes {
                     22, 21, 20,
                     22, 20, 23
             },
-            new float[] {
+            new MeshBuffer(new float[] {
                     0.0f, 0.0f, 1.0f,
                     1.0f, 0.0f, 1.0f,
                     1.0f, 1.0f, 1.0f,
@@ -121,8 +65,8 @@ public class Shapes {
                     1.0f, 0.0f, 1.0f,
                     1.0f, 1.0f, 1.0f,
                     1.0f, 1.0f, 0.0f
-            },
-            new float[] {
+            }, 3),
+            new MeshBuffer(new float[] {
                     0.0f, 1.0f,
                     1.0f, 1.0f,
                     1.0f, 0.0f,
@@ -152,7 +96,7 @@ public class Shapes {
                     1.0f, 1.0f,
                     1.0f, 0.0f,
                     0.0f, 0.0f
-            },
+            }, 2),
             new MeshBuffer[] {
                     new MeshBuffer(new float[] {
                             0.0f, 0.0f, 1.0f,

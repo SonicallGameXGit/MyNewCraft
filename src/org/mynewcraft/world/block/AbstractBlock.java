@@ -9,6 +9,7 @@ import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -18,8 +19,13 @@ public class AbstractBlock {
     protected final Identifier IDENTIFIER;
     protected final JsonObject JSON;
 
+    private static final ArrayList<AbstractBlock> blocks = new ArrayList<>();
+
+    private final int index;
+
     public AbstractBlock(Identifier identifier) {
         IDENTIFIER = identifier;
+        index = blocks.size();
 
         JsonObject json = null;
         try {
@@ -64,6 +70,12 @@ public class AbstractBlock {
                 }
             }
         }
+
+        blocks.add(this);
+    }
+
+    public static AbstractBlock getByIndex(int block) {
+        return blocks.get(block);
     }
 
     private void loadFace(JsonObject texcoords, String faceId, int id) {
@@ -94,5 +106,9 @@ public class AbstractBlock {
 
     public boolean[] getNaturalTexture() {
         return NATURAL_TEXTURE;
+    }
+
+    public int getIndex() {
+        return index;
     }
 }

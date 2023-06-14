@@ -27,4 +27,8 @@ public class Time {
 
     public double getDelta() { return delta; }
     public double getTime() { return time; }
+
+    public void pause() {
+        delta = 0.0f;
+    }
 }

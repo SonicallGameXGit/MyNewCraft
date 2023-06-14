@@ -12,11 +12,9 @@ public class CubeCollider {
     }
 
     public boolean checkCollision(CubeCollider b) {
-        if(position.x() <= b.position.x() + b.scale.x() && position.x() + scale.x() >= b.position.x())
-            if(position.y() <= b.position.y() + b.scale.y() && position.y() + scale.y() >= b.position.y())
-                return position.z() <= b.position.z() + b.scale.z() && position.z() + scale.z() >= b.position.z();
-
-        return false;
+        return position.x() <= b.position.x() + b.scale.x() && position.x() + scale.x() >= b.position.x() &&
+                position.y() <= b.position.y() + b.scale.y() && position.y() + scale.y() >= b.position.y() &&
+                position.z() <= b.position.z() + b.scale.z() && position.z() + scale.z() >= b.position.z();
     }
 
     public RayHitResult processRaycast(Vector3d rayOrigin, Vector3d rayDirection) {
