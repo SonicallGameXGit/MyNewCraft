@@ -17,5 +17,5 @@ out vec4 fragColor;
 
 void main() {
     vec4 textureColor = texture2D(colorTexture, vTexcoord);
-    fragColor = vec4(mix(textureColor.rgb * ((4.0 - vAoLevel) / 4.0) * (max(dot(normalize(vNormal), -normalize(SUN_DIRECTION)), 0.0) * 0.6 + 0.4) + pow(max(dot(reflect(-normalize(SUN_DIRECTION), normalize(vNormal)), normalize(cameraVector)), 0.0) * REFLECTIVITY, SHINE), skyColor, fogginess), textureColor.a * (1.0 - vTransparency));
+    fragColor = vec4(mix(textureColor.rgb * ((8.0 - pow(vAoLevel, 1.5)) / 8.0) * (max(dot(normalize(vNormal), -normalize(SUN_DIRECTION)), 0.0) * 0.6 + 0.4) + pow(max(dot(reflect(-normalize(SUN_DIRECTION), normalize(vNormal)), normalize(cameraVector)), 0.0) * REFLECTIVITY, SHINE), skyColor, fogginess), textureColor.a * (1.0 - vTransparency));
 }

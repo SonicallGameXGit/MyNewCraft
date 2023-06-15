@@ -21,7 +21,6 @@ import org.mynewcraft.engine.io.Keyboard;
 import org.mynewcraft.engine.io.Mouse;
 import org.mynewcraft.engine.io.Window;
 import org.mynewcraft.engine.io.texture.Texture;
-import org.mynewcraft.engine.math.MathUtil;
 import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.engine.time.Time;
 import org.mynewcraft.client.graphics.util.Identifier;
@@ -106,7 +105,6 @@ public class MyNewCraft {
         BlockSelection selection = new BlockSelection();
 
         int fps = 0;
-        int finalFps = 0;
         double fpsTimer = 0.0;
 
         boolean wireframeMode = false;
@@ -119,12 +117,11 @@ public class MyNewCraft {
 
             fps++;
             if(fpsTimer > 1.0) {
+                window.setTitle("MyNewCraft | FPS: " + fps);
+
                 fpsTimer = 0.0;
-                finalFps = fps;
                 fps = 0;
             }
-
-            window.setTitle("MyNewCraft | FPS: " + finalFps + " | Dir: " + Math.round(MathUtil.angleToDirection(playerEntity.rotation.y()).x()) + ", " + Math.round(MathUtil.angleToDirection(playerEntity.rotation.y()).y()));
 
             fpsTimer += time.getDelta();
 
@@ -182,13 +179,6 @@ public class MyNewCraft {
                     CHUNK_TRANSPARENT_MESHES.put(key, meshes[1]);
                 }
             }
-//            for(Chunk chunk : world.worldTickThread.getChunkMeshesToUpdate()) {
-//                if(CHUNK_MESHES.containsKey(chunk.getOffset())) {
-//                    Mesh[] meshes = ChunkMeshBuilder.build(chunk);
-//                    CHUNK_MESHES.replace(chunk.getOffset(), meshes[0]);
-//                    CHUNK_TRANSPARENT_MESHES.replace(chunk.getOffset(), meshes[1]);
-//                }
-//            }
 
             worldShader.load();
             worldShader.project(90.0, 0.05, 1000.0);
@@ -245,13 +235,13 @@ public class MyNewCraft {
 
             worldShader.unload();
 
-            window.imGuiBegin();
-            worldGenGui.render(window, world, time);
-            crosshairGui.render(window);
-            pauseMenuGui.render(window, mouse);
-
-            window.imGuiEnd();
-            worldGenGui.clear();
+//            window.imGuiBegin();
+//            worldGenGui.render(window, world, time);
+//            crosshairGui.render(window);
+//            pauseMenuGui.render(window, mouse);
+//
+//            window.imGuiEnd();
+//            worldGenGui.clear();
         }
 
         quit();

@@ -99,8 +99,8 @@ public class ChunkMeshBuilder {
         chunk.meshGenerated = true;
 
         return new Mesh[] {
-                new Mesh(null, new MeshBuffer(vertices, 3), new MeshBuffer(texcoords, 2), new MeshBuffer[] { new MeshBuffer(normals, 3), new MeshBuffer(alphas, 1), new MeshBuffer(aoLevels, 1) }, Mesh.TRIANGLE_FAN, false),
-                new Mesh(null, new MeshBuffer(verticesA, 3), new MeshBuffer(texcoordsA, 2), new MeshBuffer[] { new MeshBuffer(normalsA, 3), new MeshBuffer(alphasA, 1), new MeshBuffer(aoLevelsA, 1) }, Mesh.TRIANGLE_FAN, false)
+                new Mesh(null, new MeshBuffer(vertices, 3), new MeshBuffer(texcoords, 2), new MeshBuffer[] { new MeshBuffer(normals, 3), new MeshBuffer(alphas, 1), new MeshBuffer(aoLevels, 1) }, Mesh.TRIANGLES, false),
+                new Mesh(null, new MeshBuffer(verticesA, 3), new MeshBuffer(texcoordsA, 2), new MeshBuffer[] { new MeshBuffer(normalsA, 3), new MeshBuffer(alphasA, 1), new MeshBuffer(aoLevelsA, 1) }, Mesh.TRIANGLES, false)
         };
     }
 
@@ -141,48 +141,6 @@ public class ChunkMeshBuilder {
             vertexList.add(new Vector3d(x, y + 1.0, z + 1.0));
             vertexList.add(new Vector3d(x + 1.0, y, z + 1.0));
 
-            //!
-            float aoLevel = 0.0f;
-            if(chunk.containsBlock(new Vector3i(x, y + 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x - 1, y + 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x - 1, y, z + 1)))
-                aoLevel++;
-            aoLevelList.add(aoLevel);
-
-            //!
-            aoLevel = 0.0f;
-            if(chunk.containsBlock(new Vector3i(x, y - 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x - 1, y - 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x - 1, y, z + 1)))
-                aoLevel++;
-            aoLevelList.add(aoLevel);
-
-            //!
-            aoLevel = 0.0f;
-            if(chunk.containsBlock(new Vector3i(x + 1, y - 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x, y - 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x + 1, y, z + 1)))
-                aoLevel++;
-            aoLevelList.add(aoLevel);
-
-            //>
-            aoLevel = 0.0f;
-            if(chunk.containsBlock(new Vector3i(x + 1, y + 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x, y + 1, z + 1)))
-                aoLevel++;
-            if(chunk.containsBlock(new Vector3i(x + 1, y, z + 1)))
-                aoLevel++;
-            aoLevelList.add(aoLevel);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-
             double tx = block.getTexcoord()[0];
 
             if(!block.getNaturalTexture()[0] || !new Random(chunk.getSeed() + x * 293052L + y * 392050L + (z + 1) * 505940L).nextBoolean()) {
@@ -209,6 +167,7 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, 0.0, 1.0));
 
             buildTransparency(alphaList, block);
+            getZAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), true);
 
             faceCreated = true;
         }
@@ -245,14 +204,8 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, 0.0, -1.0));
             normalList.add(new Vector3d(0.0, 0.0, -1.0));
 
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-
             buildTransparency(alphaList, block);
+            getZAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), false);
 
             faceCreated = true;
         }
@@ -289,14 +242,8 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, 1.0, 0.0));
             normalList.add(new Vector3d(0.0, 1.0, 0.0));
 
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-
             buildTransparency(alphaList, block);
+            getYAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), true);
 
             faceCreated = true;
         }
@@ -333,14 +280,8 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, -1.0, 0.0));
             normalList.add(new Vector3d(0.0, -1.0, 0.0));
 
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-
             buildTransparency(alphaList, block);
+            getYAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), false);
 
             faceCreated = true;
         }
@@ -377,14 +318,8 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(1.0, 0.0, 0.0));
             normalList.add(new Vector3d(1.0, 0.0, 0.0));
 
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-
             buildTransparency(alphaList, block);
+            getXAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), true);
 
             faceCreated = true;
         }
@@ -421,19 +356,191 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(-1.0, 0.0, 0.0));
             normalList.add(new Vector3d(-1.0, 0.0, 0.0));
 
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-            aoLevelList.add(0.0f);
-
             buildTransparency(alphaList, block);
+            getXAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), false);
 
             faceCreated = true;
         }
 
         return faceCreated;
+    }
+
+    private static void getXAoLevel(List<Float> aoLevelList, Chunk chunk, Vector3i blockPos, boolean front) {
+        int x = blockPos.x();
+        int y = blockPos.y();
+        int z = blockPos.z();
+
+        float[] levels = new float[4];
+
+        float aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y - 1, z)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y - 1, z - 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y, z - 1)))
+            aoLevel++;
+        levels[0] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y - 1, z)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y - 1, z + 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y, z + 1)))
+            aoLevel++;
+        levels[1] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y + 1, z)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y + 1, z + 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y, z + 1)))
+            aoLevel++;
+        levels[2] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y + 1, z)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y + 1, z - 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + (front ? 1 : -1), y, z - 1)))
+            aoLevel++;
+        levels[3] = aoLevel;
+
+        if(front) {
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[0]);
+            aoLevelList.add(levels[2]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[3]);
+        } else {
+            aoLevelList.add(levels[0]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[2]);
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[1]);
+        }
+    }
+    private static void getYAoLevel(List<Float> aoLevelList, Chunk chunk, Vector3i blockPos, boolean front) {
+        int x = blockPos.x();
+        int y = blockPos.y();
+        int z = blockPos.z();
+
+        float[] levels = new float[4];
+
+        float aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y + (front ? 1 : -1), z - 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y + (front ? 1 : -1), z - 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y + (front ? 1 : -1), z)))
+            aoLevel++;
+        levels[0] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y + (front ? 1 : -1), z - 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y + (front ? 1 : -1), z - 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y + (front ? 1 : -1), z)))
+            aoLevel++;
+        levels[1] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y + (front ? 1 : -1), z + 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y + (front ? 1 : -1), z + 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y + (front ? 1 : -1), z)))
+            aoLevel++;
+        levels[2] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y + (front ? 1 : -1), z + 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y + (front ? 1 : -1), z + 1)))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y + (front ? 1 : -1), z)))
+            aoLevel++;
+        levels[3] = aoLevel;
+
+        if(front) {
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[0]);
+            aoLevelList.add(levels[2]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[3]);
+        } else {
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[0]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[2]);
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[1]);
+        }
+    }
+    private static void getZAoLevel(List<Float> aoLevelList, Chunk chunk, Vector3i blockPos, boolean front) {
+        int x = blockPos.x();
+        int y = blockPos.y();
+        int z = blockPos.z();
+
+        float[] levels = new float[4];
+
+        float aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y - 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y - 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y, z + (front ? 1 : -1))))
+            aoLevel++;
+        levels[0] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y - 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y - 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y, z + (front ? 1 : -1))))
+            aoLevel++;
+        levels[1] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y + 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y + 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x + 1, y, z + (front ? 1 : -1))))
+            aoLevel++;
+        levels[2] = aoLevel;
+
+        aoLevel = 0.0f;
+        if(chunk.containsBlock(new Vector3i(x, y + 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y + 1, z + (front ? 1 : -1))))
+            aoLevel++;
+        if(chunk.containsBlock(new Vector3i(x - 1, y, z + (front ? 1 : -1))))
+            aoLevel++;
+        levels[3] = aoLevel;
+
+        if(front) {
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[0]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[2]);
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[1]);
+        } else {
+            aoLevelList.add(levels[3]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[0]);
+            aoLevelList.add(levels[2]);
+            aoLevelList.add(levels[1]);
+            aoLevelList.add(levels[3]);
+        }
     }
 
     private static void buildTransparency(List<Float> alphaList, AbstractBlock block) {

@@ -6,7 +6,7 @@ import org.mynewcraft.engine.io.texture.Texture;
 public class Mesh {
     public static final int TRIANGLES = GL11.GL_TRIANGLES;
     public static final int TRIANGLE_FAN = GL11.GL_TRIANGLE_FAN;
-    public static final int TRIANGLE_STRIP = GL11.GL_TRIANGLE_STRIP;
+    public static final int TRIANGLE_STRIP = GL11.GL_TRIANGLE_FAN;
     public static final int LINES = GL11.GL_LINES;
 
     private final int[] elements;
