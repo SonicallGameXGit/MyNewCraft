@@ -1,10 +1,8 @@
 package org.mynewcraft.world.entity.custom;
 
 import org.joml.Vector2d;
-import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
-import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.client.graphics.Camera;
 import org.mynewcraft.client.graphics.util.BlockSelection;
 import org.mynewcraft.engine.io.Keyboard;
@@ -120,13 +118,15 @@ public class PlayerEntity extends LivingEntity {
         if(gameMode != SPECTATOR_GAMEMODE) {
             for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
                 for(BlockCollider block : chunk.getInteractiveBlocks()) {
-                    RayHitResult hitResult = new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
+                    if(block != null) {
+                        RayHitResult hitResult = new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
 
-                    Integer blockId = chunk.getMap().get(new Vector3i((int) block.position.x(), (int) block.position.y(), (int) block.position.z()));
-                    if(!block.containsTag(IGNORE_RAYCAST_TAG) && hitResult != null && chunk.getMeshGenerated() && blockId != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
-                        nearestDistance = hitResult.hitPoint().distance(camera.position);
-                        nearestHitResult = hitResult;
-                        nearestBlock = AbstractBlock.getByIndex(blockId);
+                        Integer blockId = chunk.getMap().get(new Vector3i((int) block.position.x(), (int) block.position.y(), (int) block.position.z()));
+                        if(!block.containsTag(IGNORE_RAYCAST_TAG) && hitResult != null && chunk.getMeshGenerated() && blockId != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
+                            nearestDistance = hitResult.hitPoint().distance(camera.position);
+                            nearestHitResult = hitResult;
+                            nearestBlock = AbstractBlock.getByIndex(blockId);
+                        }
                     }
                 }
             }
@@ -136,15 +136,20 @@ public class PlayerEntity extends LivingEntity {
                     Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
                     Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
 
-                    for(Vector2i offset : world.placeBlock(intBlockPos, Blocks.COBBLESTONE))
-                        MyNewCraft.updateMesh(world, offset);
+                    AbstractBlock block = world.getBlockAt(intBlockPos);
+                    if(block != null)
+                        block.onPlace(world, this, intBlockPos);
+
+                    world.placeBlock(intBlockPos, Blocks.COBBLESTONE);
                 }
                 if(mouse.getClick(Mouse.BUTTON_LEFT)) {
                     if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
-                        Vector3i blockPos = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
+                        Vector3i position = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
+                        AbstractBlock block = world.getBlockAt(position);
+                        if(block != null)
+                            block.onBreak(world, this, position);
 
-                        for(Vector2i offset : world.removeBlock(blockPos))
-                            MyNewCraft.updateMesh(world, offset);
+                        world.removeBlock(position);
                     }
                 }
 

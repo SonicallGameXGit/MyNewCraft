@@ -83,11 +83,28 @@ public class Mesh {
         if(useEBO) GL11.glDrawElements(RENDER_MODE, elements.length, GL11.GL_UNSIGNED_INT, 0);
         else GL11.glDrawArrays(RENDER_MODE, 0, verticesLength);
     }
+    public void render(int texture) {
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+
+        if(useEBO) GL11.glDrawElements(RENDER_MODE, elements.length, GL11.GL_UNSIGNED_INT, 0);
+        else GL11.glDrawArrays(RENDER_MODE, 0, verticesLength);
+    }
     public void render(Texture[] textures) {
         for(int i = 0; i < textures.length; i++) {
             GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, textures[i].getId());
         }
+
+        if(useEBO) GL11.glDrawElements(RENDER_MODE, elements.length, GL11.GL_UNSIGNED_INT, 0);
+        else GL11.glDrawArrays(RENDER_MODE, 0, verticesLength);
+    }
+    public void render(int[] textures) {
+        for(int i = 0; i < textures.length; i++) {
+            GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textures[i]);
+        }
+
         if(useEBO) GL11.glDrawElements(RENDER_MODE, elements.length, GL11.GL_UNSIGNED_INT, 0);
         else GL11.glDrawArrays(RENDER_MODE, 0, verticesLength);
     }

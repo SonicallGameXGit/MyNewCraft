@@ -3,8 +3,6 @@ package org.mynewcraft.world.chunk;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
-import org.mynewcraft.engine.graphics.mesh.Mesh;
-import org.mynewcraft.engine.graphics.mesh.MeshBuffer;
 import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
 import org.mynewcraft.world.block.AbstractBlock;
 import org.mynewcraft.world.block.BlockCollider;
@@ -15,18 +13,27 @@ import org.mynewcraft.world.entity.custom.PlayerEntity;
 import java.util.*;
 
 public class ChunkMeshBuilder {
-    public static Mesh[] build(Chunk chunk) {
+    private static final int FACE_FRONT = 0;
+    private static final int FACE_BACK = 1;
+    private static final int FACE_TOP = 2;
+    private static final int FACE_BOTTOM = 3;
+    private static final int FACE_RIGHT = 4;
+    private static final int FACE_LEFT = 5;
+
+    public static AbstractChunkMesh[] build(Chunk chunk) {
         ArrayList<Vector3d> vertexList = new ArrayList<>();
         ArrayList<Vector2d> texcoordList = new ArrayList<>();
         ArrayList<Vector3d> normalList = new ArrayList<>();
         ArrayList<Float> alphaList = new ArrayList<>();
         ArrayList<Float> aoLevelList = new ArrayList<>();
+        ArrayList<Vector3d> tangentList = new ArrayList<>();
 
         ArrayList<Vector3d> vertexListA = new ArrayList<>();
         ArrayList<Vector2d> texcoordListA = new ArrayList<>();
         ArrayList<Vector3d> normalListA = new ArrayList<>();
         ArrayList<Float> alphaListA = new ArrayList<>();
         ArrayList<Float> aoLevelListA = new ArrayList<>();
+        ArrayList<Vector3d> tangentListA = new ArrayList<>();
 
         HashMap<Vector3i, Integer> blocks = chunk.getMap();
         HashMap<Vector3i, Integer> abstractOutline = chunk.getAbstractOutline();
@@ -34,43 +41,48 @@ public class ChunkMeshBuilder {
         chunk.interactiveBlocks.clear();
 
         for(Vector3i coordinate : chunk.getCoordinates()) {
-            int x = coordinate.x();
-            int y = coordinate.y();
-            int z = coordinate.z();
+            if(coordinate != null) {
+                int x = coordinate.x();
+                int y = coordinate.y();
+                int z = coordinate.z();
 
-            AbstractBlock block = AbstractBlock.getByIndex(blocks.get(coordinate));
+                Integer blockId = blocks.get(coordinate);
+                if(blockId != null) {
+                    AbstractBlock block = AbstractBlock.getByIndex(blockId);
 
-            boolean faceCreated;
-            if(block instanceof Block && ((Block) block).getTransparency() > 0.0)
-                faceCreated = buildFace(chunk, blocks, abstractOutline, vertexListA, texcoordListA, normalListA, alphaListA, aoLevelListA, x, y, z, block);
-            else faceCreated = buildFace(chunk, blocks, abstractOutline, vertexList, texcoordList, normalList, alphaList, aoLevelList, x, y, z, block);
+                    boolean faceCreated;
+                    if(block instanceof Block && ((Block) block).getTransparency() > 0.0)
+                        faceCreated = buildFace(chunk, blocks, abstractOutline, vertexListA, texcoordListA, normalListA, alphaListA, aoLevelListA, tangentListA, x, y, z, block);
+                    else faceCreated = buildFace(chunk, blocks, abstractOutline, vertexList, texcoordList, normalList, alphaList, aoLevelList, tangentList, x, y, z, block);
 
-            if(faceCreated) {
-                if(!(block instanceof Block))
-                    chunk.interactiveBlocks.add(new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0)));
-                else {
-                    BlockCollider collider = new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0));
-                    if(((Block) block).getPassable())
-                        collider.addTag(LivingEntity.PASSABLE_TAG);
-                    if(((Block) block).getWaterLike())
-                        collider.addTag(LivingEntity.WATER_LIKE_TAG);
-                    if(((Block) block).getRaycastIgnore())
-                        collider.addTag(PlayerEntity.IGNORE_RAYCAST_TAG);
+                    if(faceCreated) {
+                        if(!(block instanceof Block))
+                            chunk.interactiveBlocks.add(new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0)));
+                        else {
+                            BlockCollider collider = new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0));
+                            if(((Block) block).getPassable())
+                                collider.addTag(LivingEntity.PASSABLE_TAG);
+                            if(((Block) block).getWaterLike())
+                                collider.addTag(LivingEntity.WATER_LIKE_TAG);
+                            if(((Block) block).getRaycastIgnore())
+                                collider.addTag(PlayerEntity.IGNORE_RAYCAST_TAG);
 
-                    chunk.interactiveBlocks.add(collider);
+                            chunk.interactiveBlocks.add(collider);
+                        }
+                    } if(block instanceof Block blockB) {
+                        if(blockB.getWaterLike()) {
+                            BlockCollider collider = new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0)).addTag(LivingEntity.WATER_LIKE_TAG);
+                            if(blockB.getRaycastIgnore())
+                                collider.addTag(PlayerEntity.IGNORE_RAYCAST_TAG);
+                            if(blockB.getPassable())
+                                collider.addTag(LivingEntity.PASSABLE_TAG);
+
+                            chunk.interactiveBlocks.add(collider);
+                        }
+                        if(!blockB.getStatic())
+                            chunk.notStaticBlocks.put(new Vector3i(x, y, z), block.getIndex());
+                    }
                 }
-            } if(block instanceof Block blockB) {
-                if(blockB.getWaterLike()) {
-                    BlockCollider collider = new BlockCollider(new Vector3d(x, y, z), new Vector3d(1.0)).addTag(LivingEntity.WATER_LIKE_TAG);
-                    if(blockB.getRaycastIgnore())
-                        collider.addTag(PlayerEntity.IGNORE_RAYCAST_TAG);
-                    if(blockB.getPassable())
-                        collider.addTag(LivingEntity.PASSABLE_TAG);
-
-                    chunk.interactiveBlocks.add(collider);
-                }
-                if(!blockB.getStatic())
-                    chunk.notStaticBlocks.put(new Vector3i(x, y, z), block.getIndex());
             }
         }
 
@@ -84,6 +96,8 @@ public class ChunkMeshBuilder {
         float[] alphasA = getArray(alphaListA);
         float[] aoLevels = getArray(aoLevelList);
         float[] aoLevelsA = new float[aoLevels.length];
+        float[] tangents = getArray3d(tangentList);
+        float[] tangentsA = getArray3d(tangentListA);
 
         vertexList.clear();
         vertexListA.clear();
@@ -95,12 +109,14 @@ public class ChunkMeshBuilder {
         alphaListA.clear();
         aoLevelList.clear();
         aoLevelListA.clear();
+        tangentList.clear();
+        tangentListA.clear();
 
         chunk.meshGenerated = true;
 
-        return new Mesh[] {
-                new Mesh(null, new MeshBuffer(vertices, 3), new MeshBuffer(texcoords, 2), new MeshBuffer[] { new MeshBuffer(normals, 3), new MeshBuffer(alphas, 1), new MeshBuffer(aoLevels, 1) }, Mesh.TRIANGLES, false),
-                new Mesh(null, new MeshBuffer(verticesA, 3), new MeshBuffer(texcoordsA, 2), new MeshBuffer[] { new MeshBuffer(normalsA, 3), new MeshBuffer(alphasA, 1), new MeshBuffer(aoLevelsA, 1) }, Mesh.TRIANGLES, false)
+        return new AbstractChunkMesh[] {
+                new AbstractChunkMesh(chunk.getOffset(), vertices, texcoords, normals, alphas, aoLevels, tangents),
+                new AbstractChunkMesh(chunk.getOffset(), verticesA, texcoordsA, normalsA, alphasA, aoLevelsA, tangentsA)
         };
     }
 
@@ -130,7 +146,7 @@ public class ChunkMeshBuilder {
         return array;
     }
 
-    private static boolean buildFace(Chunk chunk, HashMap<Vector3i, Integer> blocks, HashMap<Vector3i, Integer> abstractOutline, List<Vector3d> vertexList, List<Vector2d> texcoordList, List<Vector3d> normalList, List<Float> alphaList, List<Float> aoLevelList, int x, int y, int z, AbstractBlock block) {
+    private static boolean buildFace(Chunk chunk, HashMap<Vector3i, Integer> blocks, HashMap<Vector3i, Integer> abstractOutline, List<Vector3d> vertexList, List<Vector2d> texcoordList, List<Vector3d> normalList, List<Float> alphaList, List<Float> aoLevelList, List<Vector3d> tangentList, int x, int y, int z, AbstractBlock block) {
         boolean faceCreated = false;
 
         if(checkNeighbourBlock(blocks, abstractOutline, new Vector3i(x, y, z), new Vector3i(x, y, z + 1))) {
@@ -167,7 +183,9 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, 0.0, 1.0));
 
             buildTransparency(alphaList, block);
+
             getZAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), true);
+            getTangents(tangentList, FACE_FRONT);
 
             faceCreated = true;
         }
@@ -205,7 +223,9 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, 0.0, -1.0));
 
             buildTransparency(alphaList, block);
+
             getZAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), false);
+            getTangents(tangentList, FACE_BACK);
 
             faceCreated = true;
         }
@@ -243,7 +263,9 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, 1.0, 0.0));
 
             buildTransparency(alphaList, block);
+
             getYAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), true);
+            getTangents(tangentList, FACE_TOP);
 
             faceCreated = true;
         }
@@ -281,7 +303,9 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(0.0, -1.0, 0.0));
 
             buildTransparency(alphaList, block);
+
             getYAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), false);
+            getTangents(tangentList, FACE_BOTTOM);
 
             faceCreated = true;
         }
@@ -319,7 +343,9 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(1.0, 0.0, 0.0));
 
             buildTransparency(alphaList, block);
+
             getXAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), true);
+            getTangents(tangentList, FACE_RIGHT);
 
             faceCreated = true;
         }
@@ -357,7 +383,9 @@ public class ChunkMeshBuilder {
             normalList.add(new Vector3d(-1.0, 0.0, 0.0));
 
             buildTransparency(alphaList, block);
+
             getXAoLevel(aoLevelList, chunk, new Vector3i(x, y, z), false);
+            getTangents(tangentList, FACE_LEFT);
 
             faceCreated = true;
         }
@@ -365,6 +393,25 @@ public class ChunkMeshBuilder {
         return faceCreated;
     }
 
+    private static void getTangent(List<Vector3d> tangentList, int face) {
+        Vector3d tangent = new Vector3d();
+        if(face == FACE_FRONT || face == FACE_TOP)
+            tangent = new Vector3d(1.0, 0.0, 0.0);
+        else if(face == FACE_BACK || face == FACE_BOTTOM)
+            tangent = new Vector3d(-1.0, 0.0, 0.0);
+        else if(face == FACE_RIGHT) {
+            tangent = new Vector3d(0.0, 0.0, 1.0);
+        }
+        else if(face == FACE_LEFT)
+            tangent = new Vector3d(0.0, 0.0, -1.0);
+        tangentList.add(tangent);
+        tangentList.add(tangent);
+        tangentList.add(tangent);
+    }
+    private static void getTangents(List<Vector3d> tangentList, int face) {
+        getTangent(tangentList, face);
+        getTangent(tangentList, face);
+    }
     private static void getXAoLevel(List<Float> aoLevelList, Chunk chunk, Vector3i blockPos, boolean front) {
         int x = blockPos.x();
         int y = blockPos.y();

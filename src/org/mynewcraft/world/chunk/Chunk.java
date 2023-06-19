@@ -31,7 +31,7 @@ public class Chunk {
     public static FastNoiseLite worldGenNoise;
     public static FastNoiseLite caveGenNoise;
 
-    private static final int SEA_LEVEL = 72;
+    private static final int SEA_LEVEL = 102;
 
     public Chunk(Vector2i offset) {
         this.offset = offset;
@@ -128,7 +128,7 @@ public class Chunk {
                         if(i >= height - new Random(seed + ox * 392034L + oz * 3929340L).nextDouble(0.0, 6.0))
                             block = Blocks.DIRT;
                         if(i == height - 1)
-                            block = height <= SEA_LEVEL + 5.0 + (caveGenNoise.GetNoise(ox, oz) + 1.0) * 6.0 ? (caveGenNoise.GetNoise(ox + 3920.0f, oz - 323.3f) <= 0.3 ? Blocks.SAND : Blocks.GRAVEL) : Blocks.GRASS_BLOCK;
+                            block = height <= SEA_LEVEL + 3.0 + (caveGenNoise.GetNoise(ox, oz) + 1.0) * 3.0 ? (caveGenNoise.GetNoise(ox + 3920.0f, oz - 323.3f) <= 0.3 ? Blocks.SAND : Blocks.GRAVEL) : Blocks.GRASS_BLOCK;
                         if(height <= SEA_LEVEL) {
                             for(int j = height; j <= SEA_LEVEL; j++)
                                 if(notOutline) blocks.put(new Vector3i(x, j, z), Blocks.WATER.getIndex());

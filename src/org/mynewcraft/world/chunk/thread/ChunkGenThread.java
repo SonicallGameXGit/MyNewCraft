@@ -22,13 +22,12 @@ public class ChunkGenThread extends Thread {
                 ArrayList<Vector2i> offsets = new ArrayList<>(chunks.keySet());
 
                 for(int i = 0; i < offsets.size(); i++) {
-                    Vector2i offset = offsets.get(i);
-                    Chunk chunk = chunks.get(offset);
+                    Chunk chunk = chunks.get(offsets.get(i));
                     if(chunk != null) {
                         chunk.generate();
 
                         generatedChunks.add(chunk);
-                        this.chunks.remove(offset);
+                        this.chunks.remove(offsets.get(i));
                     }
                 }
             }

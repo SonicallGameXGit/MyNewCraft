@@ -134,12 +134,13 @@ public class Window {
             glfwMakeContextCurrent(backup);
         }
     }
-    public void close() {
+    public void closeImGui() {
         imGuiGl.dispose();
         imGuiGlfw.dispose();
 
         ImGui.destroyContext();
-
+    }
+    public void close() {
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -224,5 +225,9 @@ public class Window {
 
     public boolean getFullscreen() {
         return fullscreen;
+    }
+
+    public void clear() {
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
     }
 }

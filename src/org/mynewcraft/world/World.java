@@ -3,13 +3,10 @@ package org.mynewcraft.world;
 import org.auburn.fnl.FastNoiseLite;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
-import org.joml.Vector3d;
 import org.joml.Vector3i;
 import org.mynewcraft.MyNewCraft;
-import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.engine.time.Time;
 import org.mynewcraft.world.block.AbstractBlock;
-import org.mynewcraft.world.block.custom.Block;
 import org.mynewcraft.world.chunk.Chunk;
 import org.mynewcraft.world.chunk.thread.ChunkGenThread;
 import org.mynewcraft.world.entity.AbstractEntity;
@@ -27,7 +24,8 @@ public class World {
     public final HashMap<Vector2i, Chunk> CHUNKS_TO_REMOVE = new HashMap<>();
     public final HashMap<Vector2i, Chunk> CHUNKS = new HashMap<>();
 
-    public final List<AbstractEntity> ENTITIES = new ArrayList<>();
+    public final ArrayList<Vector2i> chunkMeshesToUpdate = new ArrayList<>();
+    public final ArrayList<AbstractEntity> ENTITIES = new ArrayList<>();
 
     public static final int chunkScale = 7;
 
@@ -79,76 +77,27 @@ public class World {
             CHUNKS_TO_REMOVE.remove(offset);
         }
 
-        for(Chunk chunk : new ArrayList<>(chunkGenThread.getChunks()))
-            if(chunk != null && !CHUNKS.containsKey(chunk.getOffset()))
-                CHUNKS.put(chunk.getOffset(), chunk);
+        for(Chunk chunk : new ArrayList<>(chunkGenThread.getChunks())) {
+            if(chunk != null) {
+                if(!CHUNKS.containsKey(chunk.getOffset()))
+                    CHUNKS.put(chunk.getOffset(), chunk);
+                else CHUNKS.replace(chunk.getOffset(), chunk);
+
+                MyNewCraft.updateMesh(this, chunk.getOffset());
+            }
+        }
+        for(Vector2i offset : chunkMeshesToUpdate)
+            MyNewCraft.updateMesh(this, offset);
+
+        chunkMeshesToUpdate.clear();
+
         for(AbstractEntity entity : new ArrayList<>(ENTITIES))
             if(entity instanceof FallingBlockEntity fallingBlockEntity)
                 fallingBlockEntity.update(this, time);
 
-        ArrayList<Vector3i> blocksToRemove = new ArrayList<>();
-        ArrayList<AbstractEntity> entitiesToSpawn = new ArrayList<>();
-        for(Chunk chunk : CHUNKS.values()) {
-            if(chunk.getGenerated() && chunk.getMeshGenerated()) {
-                for(Vector3i offset : new ArrayList<>(chunk.getNotStaticBlocks().keySet())) {
-                    AbstractBlock block = AbstractBlock.getByIndex(chunk.getNotStaticBlocks().get(offset));
-                    Vector3i scaledOffset = new Vector3i(offset).add(new Vector3i(chunk.getOffset().x() * chunkScale, 0, chunk.getOffset().y() * chunkScale));
-
-                    if(block instanceof Block blockB) {
-                        if(!blockB.getStatic()) {
-                            if(chunk.getMap().get(new Vector3i(offset.x(), offset.y() - 1, offset.z())) == null) {
-                                entitiesToSpawn.add(new FallingBlockEntity(new CubeCollider(new Vector3d(offset.x() + chunk.getOffset().x() * chunkScale, offset.y(), offset.z() + chunk.getOffset().y() * chunkScale), new Vector3d(1.0)), block, 1.0));
-                                blocksToRemove.add(scaledOffset);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        for(AbstractEntity entity : entitiesToSpawn)
-            spawnEntity(entity);
-        for(Vector3i blockToRemove : blocksToRemove)
-            for(Vector2i offset : removeBlock(blockToRemove))
-                MyNewCraft.updateMesh(this, offset);
-
-        blocksToRemove.clear();
-        entitiesToSpawn.clear();
-
         chunkGenThread.clearGenerated();
     }
-
-    public ArrayList<Vector2i> placeBlock(Vector3i coordinate, AbstractBlock block) {
-        Vector2i chunkPos = new Vector2i((int) Math.floor(coordinate.x() / (double) chunkScale), (int) Math.floor(coordinate.z() / (double) chunkScale));
-        Chunk chunk = CHUNKS.get(chunkPos);
-
-        Vector3i intBlockPos = new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * chunkScale, 0, chunkPos.y() * chunkScale));
-
-        ArrayList<Vector2i> chunksToUpdate = new ArrayList<>();
-        if(chunk != null && chunk.placeBlock(intBlockPos, block)) {
-            if(intBlockPos.x() >= chunkScale - 1 && CHUNKS.get(new Vector2i(chunkPos).add(1, 0)) != null) {
-                CHUNKS.get(new Vector2i(chunkPos).add(1, 0)).placeAbstractOutlineBlock(new Vector3i(-1, intBlockPos.y(), intBlockPos.z()), block);
-                chunksToUpdate.add(new Vector2i(chunkPos).add(1, 0));
-            }
-            if(intBlockPos.x() <= 0 && CHUNKS.get(new Vector2i(chunkPos).sub(1, 0)) != null) {
-                CHUNKS.get(new Vector2i(chunkPos).sub(1, 0)).placeAbstractOutlineBlock(new Vector3i(chunkScale, intBlockPos.y(), intBlockPos.z()), block);
-                chunksToUpdate.add(new Vector2i(chunkPos).sub(1, 0));
-            }
-            if(intBlockPos.z() >= chunkScale - 1 && CHUNKS.get(new Vector2i(chunkPos).add(0, 1)) != null) {
-                CHUNKS.get(new Vector2i(chunkPos).add(0, 1)).placeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), -1), block);
-                chunksToUpdate.add(new Vector2i(chunkPos).add(0, 1));
-            }
-            if(intBlockPos.z() <= 0 && CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)) != null) {
-                CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)).placeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), chunkScale), block);
-                chunksToUpdate.add(new Vector2i(chunkPos).sub(0, 1));
-            }
-
-            chunksToUpdate.add(chunk.getOffset());
-        }
-
-        return chunksToUpdate;
-    }
-
-    public ArrayList<Vector2i> removeBlock(Vector3i coordinate) {
+    public void removeBlock(Vector3i coordinate) {
         Vector2i chunkPos = new Vector2i((int) Math.floor(coordinate.x() / (double) chunkScale), (int) Math.floor(coordinate.z() / (double) chunkScale));
         Chunk chunk = CHUNKS.get(chunkPos);
 
@@ -157,6 +106,7 @@ public class World {
         ArrayList<Vector2i> chunksToUpdate = new ArrayList<>();
         if(chunk != null) {
             chunk.removeBlock(intBlockPos);
+            chunksToUpdate.add(chunkPos);
 
             if(intBlockPos.x() >= chunkScale - 1 && CHUNKS.get(new Vector2i(chunkPos).add(1, 0)) != null) {
                 CHUNKS.get(new Vector2i(chunkPos).add(1, 0)).removeAbstractOutlineBlock(new Vector3i(-1, intBlockPos.y(), intBlockPos.z()));
@@ -174,11 +124,47 @@ public class World {
                 CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)).removeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), chunkScale));
                 chunksToUpdate.add(new Vector2i(chunkPos).sub(0, 1));
             }
-
-            chunksToUpdate.add(chunk.getOffset());
         }
 
-        return chunksToUpdate;
+        for(Vector2i offset : chunksToUpdate)
+            if(!chunkMeshesToUpdate.contains(offset))
+                chunkMeshesToUpdate.add(offset);
+
+        chunksToUpdate.clear();
+    }
+    public void placeBlock(Vector3i coordinate, AbstractBlock block) {
+        Vector2i chunkPos = new Vector2i((int) Math.floor(coordinate.x() / (double) chunkScale), (int) Math.floor(coordinate.z() / (double) chunkScale));
+        Chunk chunk = CHUNKS.get(chunkPos);
+
+        Vector3i intBlockPos = new Vector3i(coordinate).sub(new Vector3i(chunkPos.x() * chunkScale, 0, chunkPos.y() * chunkScale));
+
+        ArrayList<Vector2i> chunksToUpdate = new ArrayList<>();
+        if(chunk != null && chunk.placeBlock(intBlockPos, block)) {
+            chunksToUpdate.add(chunkPos);
+
+            if(intBlockPos.x() >= chunkScale - 1 && CHUNKS.get(new Vector2i(chunkPos).add(1, 0)) != null) {
+                CHUNKS.get(new Vector2i(chunkPos).add(1, 0)).placeAbstractOutlineBlock(new Vector3i(-1, intBlockPos.y(), intBlockPos.z()), block);
+                chunksToUpdate.add(new Vector2i(chunkPos).add(1, 0));
+            }
+            if(intBlockPos.x() <= 0 && CHUNKS.get(new Vector2i(chunkPos).sub(1, 0)) != null) {
+                CHUNKS.get(new Vector2i(chunkPos).sub(1, 0)).placeAbstractOutlineBlock(new Vector3i(chunkScale, intBlockPos.y(), intBlockPos.z()), block);
+                chunksToUpdate.add(new Vector2i(chunkPos).sub(1, 0));
+            }
+            if(intBlockPos.z() >= chunkScale - 1 && CHUNKS.get(new Vector2i(chunkPos).add(0, 1)) != null) {
+                CHUNKS.get(new Vector2i(chunkPos).add(0, 1)).placeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), -1), block);
+                chunksToUpdate.add(new Vector2i(chunkPos).add(0, 1));
+            }
+            if(intBlockPos.z() <= 0 && CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)) != null) {
+                CHUNKS.get(new Vector2i(chunkPos).sub(0, 1)).placeAbstractOutlineBlock(new Vector3i(intBlockPos.x(), intBlockPos.y(), chunkScale), block);
+                chunksToUpdate.add(new Vector2i(chunkPos).sub(0, 1));
+            }
+        }
+
+        for(Vector2i offset : chunksToUpdate)
+            if(!chunkMeshesToUpdate.contains(offset))
+                chunkMeshesToUpdate.add(offset);
+
+        chunksToUpdate.clear();
     }
     public void clear() {
         CHUNKS_TO_LOAD.clear();
@@ -189,16 +175,18 @@ public class World {
 
         ENTITIES.clear();
     }
-
     public void close() {
         chunkGenThread.interrupt();
     }
     public void loadChunk(Vector2i offset) {
-        CHUNKS_TO_LOAD.put(offset, new Chunk(offset));
+        if(!CHUNKS_TO_LOAD.containsKey(offset) && !CHUNKS.containsKey(offset))
+            CHUNKS_TO_LOAD.put(offset, new Chunk(offset));
     }
     public void removeChunk(Vector2i offset) {
-        CHUNKS_TO_REMOVE.put(offset, CHUNKS.get(offset));
+        if(!CHUNKS_TO_REMOVE.containsKey(offset))
+            CHUNKS_TO_REMOVE.put(offset, CHUNKS.get(offset));
     }
+
     public Chunk[] getNearChunks(Vector2d position) {
         int chunkX = (int) Math.floor(position.x() / chunkScale);
         int chunkZ = (int) Math.floor(position.y() / chunkScale);
@@ -226,5 +214,14 @@ public class World {
     }
     public void spawnEntity(AbstractEntity entity) {
         ENTITIES.add(entity);
+    }
+
+    public AbstractBlock getBlockAt(Vector3i coordinate) {
+        Vector2i chunkOffset = new Vector2i((int) Math.floor(coordinate.x() / (double) chunkScale), (int) Math.floor(coordinate.z() / (double) chunkScale));
+        Chunk chunk = getChunk(new Vector2i(chunkOffset));
+        if(chunk == null) return null;
+
+        Integer blockId = chunk.getMap().get(new Vector3i(coordinate).sub(chunkOffset.x() * chunkScale, 0, chunkOffset.y() * chunkScale));
+        return blockId == null ? null : AbstractBlock.getByIndex(blockId);
     }
 }

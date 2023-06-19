@@ -12,8 +12,16 @@ public class WorldShader extends Default3dShader {
         super("resourcepacks/" + MyNewCraft.RESOURCE_PACK + '/' + MyNewCraft.GAME_ID + "/shaders/world.vert", "resourcepacks/" + MyNewCraft.RESOURCE_PACK + '/' + MyNewCraft.GAME_ID + "/shaders/world.frag", window);
     }
 
+    @Override
+    public void load() {
+        super.load();
+
+        setVariable("colorTexture", 0);
+        setVariable("normalTexture", 1);
+    }
+
     public void fog(Vector3d color) {
-        setVariable("viewDistance", 1.0 / (MyNewCraft.viewDistance * World.chunkScale));
+        setVariable("viewDistance", 2.0 / (MyNewCraft.viewDistance * World.chunkScale));
         setVariable("skyColor", color);
     }
     public void time(Time time) {

@@ -1,10 +1,8 @@
 package org.mynewcraft.world.entity.custom;
 
 import org.joml.Vector2d;
-import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
-import org.mynewcraft.MyNewCraft;
 import org.mynewcraft.client.graphics.shader.WorldShader;
 import org.mynewcraft.client.graphics.util.texture.AtlasGenerator;
 import org.mynewcraft.engine.graphics.mesh.Mesh;
@@ -156,7 +154,38 @@ public class FallingBlockEntity extends AbstractEntity {
                         0.0f, 0.0f, 0.0f, 0.0f,
                         0.0f, 0.0f, 0.0f, 0.0f,
                         0.0f, 0.0f, 0.0f, 0.0f
-                }, 1)
+                }, 1),
+                new MeshBuffer(new float[] {
+                        1.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f,
+
+                        -1.0f, 0.0f, 0.0f,
+                        -1.0f, 0.0f, 0.0f,
+                        -1.0f, 0.0f, 0.0f,
+                        -1.0f, 0.0f, 0.0f,
+
+                        1.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f,
+
+                        -1.0f, 0.0f, 0.0f,
+                        -1.0f, 0.0f, 0.0f,
+                        -1.0f, 0.0f, 0.0f,
+                        -1.0f, 0.0f, 0.0f,
+
+                        0.0f, 0.0f, 1.0f,
+                        0.0f, 0.0f, 1.0f,
+                        0.0f, 0.0f, 1.0f,
+                        0.0f, 0.0f, 1.0f,
+
+                        0.0f, 0.0f, -1.0f,
+                        0.0f, 0.0f, -1.0f,
+                        0.0f, 0.0f, -1.0f,
+                        0.0f, 0.0f, -1.0f
+                }, 3)
         }, Mesh.TRIANGLES, true);
     }
 
@@ -182,13 +211,11 @@ public class FallingBlockEntity extends AbstractEntity {
 
         if(finalBlockPos != null) {
             world.killEntity(this);
-
-            for(Vector2i offset : world.placeBlock(finalBlockPos, block))
-                MyNewCraft.updateMesh(world, offset);
+            world.placeBlock(finalBlockPos, block);
         }
         if(collider.position.y() <= 0.0) world.killEntity(this);
     }
-    public void render(WorldShader worldShader, Texture blockAtlas) {
+    public void render(WorldShader worldShader, Texture[] blockAtlas) {
         worldShader.transform(new Vector3d(collider.position.x() - 0.25, collider.position.y() - 0.25, collider.position.z() - 0.25), new Vector3d(), new Vector3d(collider.scale.x() + 0.5, collider.scale.y() + 0.5, collider.scale.z() + 0.5));
 
         mesh.load();

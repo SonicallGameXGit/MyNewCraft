@@ -59,8 +59,8 @@ public class Texture {
             texture = TextureLoader.getTexture(type.toUpperCase(), new FileInputStream(location), filter);
 
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_REPEAT);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_REPEAT);
         } catch(IOException exception) {
             exception.printStackTrace();
         }

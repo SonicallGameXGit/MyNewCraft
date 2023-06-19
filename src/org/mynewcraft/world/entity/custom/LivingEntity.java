@@ -1,12 +1,12 @@
 package org.mynewcraft.world.entity.custom;
 
-import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.joml.Vector3i;
 import org.mynewcraft.engine.math.physics.CubeCollider;
 import org.mynewcraft.engine.time.Time;
 import org.mynewcraft.world.World;
-import org.mynewcraft.world.block.BlockCollider;
-import org.mynewcraft.world.chunk.Chunk;
+import org.mynewcraft.world.block.AbstractBlock;
+import org.mynewcraft.world.block.custom.Block;
 import org.mynewcraft.world.entity.AbstractEntity;
 
 public abstract class LivingEntity extends AbstractEntity {
@@ -56,19 +56,31 @@ public abstract class LivingEntity extends AbstractEntity {
 
         collider.position.y += direction.y() * time.getDelta();
         if(processCollisions) {
-            for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(BlockCollider block : chunk.getInteractiveBlocks()) {
-                    if(!block.containsTag(PASSABLE_TAG) && new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).checkCollision(collider)) {
-                        boolean hasWaterTag = block.containsTag(WATER_LIKE_TAG);
+            for(int x = (int) Math.floor(collider.position.x()) - 1; x <= (int) Math.floor(collider.position.x() + collider.scale.x()) + 1; x++) {
+                for(int y = (int) Math.floor(collider.position.y()) - 1; y <= (int) Math.floor(collider.position.y() + collider.scale.y()) + 1; y++) {
+                    for(int z = (int) Math.floor(collider.position.z()) - 1; z <= (int) Math.floor(collider.position.z() + collider.scale.z()) + 1; z++) {
+                        AbstractBlock block = world.getBlockAt(new Vector3i(x, y, z));
+                        if(block != null && new CubeCollider(new Vector3d(x, y, z), new Vector3d(1.0)).checkCollision(collider)) {
+                            if(block instanceof Block blockB) {
+                                if(!blockB.getPassable()) {
+                                    boolean hasWaterTag = blockB.getWaterLike();
 
-                        collider.position.y -= direction.y() * time.getDelta() * (hasWaterTag ? 0.0 : 1.0);
-                        canJump = direction.y() < 0.0 || hasWaterTag;
+                                    collider.position.y -= direction.y() * time.getDelta() * (hasWaterTag ? 0.0 : 1.0);
+                                    canJump = direction.y() < 0.0 || hasWaterTag;
 
-                        direction.y = hasWaterTag ? direction.y() : 0.0;
+                                    direction.y = hasWaterTag ? direction.y() : 0.0;
 
-                        if(hasWaterTag) underwater = true;
+                                    if(hasWaterTag) underwater = true;
+                                    break;
+                                }
+                            } else {
+                                collider.position.y -= direction.y() * time.getDelta();
+                                canJump = direction.y() < 0.0 ;
 
-                        break;
+                                direction.y = 0.0;
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -76,14 +88,27 @@ public abstract class LivingEntity extends AbstractEntity {
 
         collider.position.x += direction.x() * time.getDelta();
         if(processCollisions) {
-            for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(BlockCollider block : chunk.getInteractiveBlocks()) {
-                    if(!block.containsTag(PASSABLE_TAG) && new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).checkCollision(collider)) {
-                        boolean hasWaterTag = block.containsTag(WATER_LIKE_TAG);
-                        collider.position.x -= direction.x() / (hasWaterTag ? world.waterDeceleration : 1.0) * time.getDelta();
+            for(int x = (int) Math.floor(collider.position.x()) - 1; x <= (int) Math.floor(collider.position.x() + collider.scale.x()) + 1; x++) {
+                for(int y = (int) Math.floor(collider.position.y()) - 1; y <= (int) Math.floor(collider.position.y() + collider.scale.y()) + 1; y++) {
+                    for(int z = (int) Math.floor(collider.position.z()) - 1; z <= (int) Math.floor(collider.position.z() + collider.scale.z()) + 1; z++) {
+                        AbstractBlock block = world.getBlockAt(new Vector3i(x, y, z));
+                        if(block != null && new CubeCollider(new Vector3d(x, y, z), new Vector3d(1.0)).checkCollision(collider)) {
+                            if(block instanceof Block blockB) {
+                                if(!blockB.getPassable()) {
+                                    boolean hasWaterTag = blockB.getWaterLike();
+                                    collider.position.x -= direction.x() / (hasWaterTag ? world.waterDeceleration : 1.0) * time.getDelta();
+                                    direction.x = 0.0;
 
-                        if(hasWaterTag) underwater = true;
-                        break;
+                                    if(hasWaterTag) underwater = true;
+                                    break;
+                                }
+                            } else {
+                                collider.position.x -= direction.x() * time.getDelta();
+                                direction.x = 0.0;
+
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -91,14 +116,27 @@ public abstract class LivingEntity extends AbstractEntity {
 
         collider.position.z += direction.z() * time.getDelta();
         if(processCollisions) {
-            for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(BlockCollider block : chunk.getInteractiveBlocks()) {
-                    if(!block.containsTag(PASSABLE_TAG) && new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).checkCollision(collider)) {
-                        boolean hasWaterTag = block.containsTag(WATER_LIKE_TAG);
-                        collider.position.z -= direction.z() / (hasWaterTag ? world.waterDeceleration : 1.0) * time.getDelta();
+            for(int x = (int) Math.floor(collider.position.x()) - 1; x <= (int) Math.floor(collider.position.x() + collider.scale.x()) + 1; x++) {
+                for(int y = (int) Math.floor(collider.position.y()) - 1; y <= (int) Math.floor(collider.position.y() + collider.scale.y()) + 1; y++) {
+                    for(int z = (int) Math.floor(collider.position.z()) - 1; z <= (int) Math.floor(collider.position.z() + collider.scale.z()) + 1; z++) {
+                        AbstractBlock block = world.getBlockAt(new Vector3i(x, y, z));
+                        if(block != null && new CubeCollider(new Vector3d(x, y, z), new Vector3d(1.0)).checkCollision(collider)) {
+                            if(block instanceof Block blockB) {
+                                if(!blockB.getPassable()) {
+                                    boolean hasWaterTag = blockB.getWaterLike();
+                                    collider.position.z -= direction.z() / (hasWaterTag ? world.waterDeceleration : 1.0) * time.getDelta();
+                                    direction.z = 0.0;
 
-                        if(hasWaterTag) underwater = true;
-                        break;
+                                    if(hasWaterTag) underwater = true;
+                                    break;
+                                }
+                            } else {
+                                collider.position.z -= direction.z() * time.getDelta();
+                                direction.z = 0.0;
+
+                                break;
+                            }
+                        }
                     }
                 }
             }

@@ -2,15 +2,17 @@ package org.mynewcraft.engine.time;
 
 public class Time {
     private final double startTime;
+    private final double breakDelta;
 
     private double lastTime;
     private double time;
     private double delta;
 
-    public Time() {
+    public Time(double breakDelta) {
         lastTime = System.nanoTime();
         startTime = System.nanoTime();
         delta = 0.0;
+        this.breakDelta = breakDelta;
     }
 
     public static long getMilliseconds() {
@@ -25,7 +27,7 @@ public class Time {
         time = (System.nanoTime() - startTime) / 1000000000.0;
     }
 
-    public double getDelta() { return delta; }
+    public double getDelta() { return delta >= breakDelta ? 0.0 : delta; }
     public double getTime() { return time; }
 
     public void pause() {
