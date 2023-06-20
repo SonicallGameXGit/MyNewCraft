@@ -27,7 +27,7 @@ public class World {
     public final ArrayList<Vector2i> chunkMeshesToUpdate = new ArrayList<>();
     public final ArrayList<AbstractEntity> ENTITIES = new ArrayList<>();
 
-    public static final int chunkScale = 7;
+    public static final int chunkScale = 16;
 
     public final long SEED;
     public final int DEFAULT_GAMEMODE;

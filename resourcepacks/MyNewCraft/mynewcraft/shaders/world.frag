@@ -1,6 +1,6 @@
 #version 420
-#define REFLECTIVITY 0.3
-#define SHINE 2.0
+#define REFLECTIVITY 0.2
+#define SHINE 1.5
 #define SUN_COLOR vec3(1.0, 0.9, 0.6)
 
 in vec2 vTexcoord;

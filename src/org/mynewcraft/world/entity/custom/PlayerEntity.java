@@ -1,8 +1,7 @@
 package org.mynewcraft.world.entity.custom;
 
-import org.joml.Vector2d;
-import org.joml.Vector3d;
-import org.joml.Vector3i;
+import org.joml.*;
+import org.joml.Math;
 import org.mynewcraft.client.graphics.Camera;
 import org.mynewcraft.client.graphics.util.BlockSelection;
 import org.mynewcraft.engine.io.Keyboard;
@@ -13,7 +12,6 @@ import org.mynewcraft.engine.math.physics.RayHitResult;
 import org.mynewcraft.engine.time.Time;
 import org.mynewcraft.world.World;
 import org.mynewcraft.world.block.AbstractBlock;
-import org.mynewcraft.world.block.BlockCollider;
 import org.mynewcraft.world.block.Blocks;
 import org.mynewcraft.world.block.custom.Block;
 import org.mynewcraft.world.chunk.Chunk;
@@ -32,6 +30,7 @@ public class PlayerEntity extends LivingEntity {
     public double flySpeedMultiplier;
     public double walkSharpness;
     public double flySharpnessMultiplier;
+    public double buildDistance = 6.0;
 
     protected int gameMode;
     protected boolean flying;
@@ -116,39 +115,56 @@ public class PlayerEntity extends LivingEntity {
         AbstractBlock nearestBlock = null;
 
         if(gameMode != SPECTATOR_GAMEMODE) {
-            for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
-                for(BlockCollider block : chunk.getInteractiveBlocks()) {
-                    if(block != null) {
-                        RayHitResult hitResult = new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
+            for(int x = (int) Math.floor(camera.position.x() - buildDistance); x <= (int) Math.floor(camera.position.x() + buildDistance); x++) {
+                for(int y = (int) Math.floor(camera.position.y() - buildDistance); y <= (int) Math.floor(camera.position.y() + buildDistance); y++) {
+                    for(int z = (int) Math.floor(camera.position.z() - buildDistance); z <= (int) Math.floor(camera.position.z() + buildDistance); z++) {
+                        AbstractBlock block = world.getBlockAt(new Vector3i(x, y, z));
+                        Chunk chunk = world.getChunk(new Vector2i(x, z).sub((int) Math.floor(x / (double) World.chunkScale) * World.chunkScale, (int) Math.floor(z / (double) World.chunkScale) * World.chunkScale));
 
-                        Integer blockId = chunk.getMap().get(new Vector3i((int) block.position.x(), (int) block.position.y(), (int) block.position.z()));
-                        if(!block.containsTag(IGNORE_RAYCAST_TAG) && hitResult != null && chunk.getMeshGenerated() && blockId != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
-                            nearestDistance = hitResult.hitPoint().distance(camera.position);
-                            nearestHitResult = hitResult;
-                            nearestBlock = AbstractBlock.getByIndex(blockId);
+                        if(block != null && chunk != null) {
+                            RayHitResult hitResult = new CubeCollider(new Vector3d(x, y, z), new Vector3d(1.0)).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
+                            if((!(block instanceof Block) || !((Block) block).getRaycastIgnore()) && hitResult != null && chunk.getMeshGenerated() && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
+                                nearestDistance = hitResult.hitPoint().distance(camera.position);
+                                nearestHitResult = hitResult;
+                                nearestBlock = block;
+                            }
                         }
                     }
                 }
             }
+//            for(Chunk chunk : world.getNearChunks(new Vector2d(collider.position.x(), collider.position.z()))) {
+//                for(BlockCollider block : chunk.getInteractiveBlocks()) {
+//                    if(block != null) {
+//                        RayHitResult hitResult = new CubeCollider(new Vector3d(block.position).add(chunk.getOffset().x() * World.chunkScale, 0.0, chunk.getOffset().y() * World.chunkScale), block.scale).processRaycast(camera.position, MathUtil.angleToDirection(new Vector2d(camera.rotation.x(), camera.rotation.y())));
+//
+//                        Integer blockId = chunk.getMap().get(new Vector3i((int) block.position.x(), (int) block.position.y(), (int) block.position.z()));
+//                        if(!block.containsTag(IGNORE_RAYCAST_TAG) && hitResult != null && chunk.getMeshGenerated() && blockId != null && hitResult.hitPoint().distance(camera.position) < nearestDistance) {
+//                            nearestDistance = hitResult.hitPoint().distance(camera.position);
+//                            nearestHitResult = hitResult;
+//                            nearestBlock = AbstractBlock.getByIndex(blockId);
+//                        }
+//                    }
+//                }
+//            }
 
             if(nearestHitResult != null && nearestDistance <= 6.0) {
                 if(mouse.getClick(Mouse.BUTTON_RIGHT) && !collider.checkCollision(new CubeCollider(new Vector3d(nearestHitResult.hitObject().position.x() + nearestHitResult.hitNormal().x(), nearestHitResult.hitObject().position.y() + nearestHitResult.hitNormal().y(), nearestHitResult.hitObject().position.z() + nearestHitResult.hitNormal().z()), nearestHitResult.hitObject().scale))) {
                     Vector3d blockPos = new Vector3d(nearestHitResult.hitObject().position).add(nearestHitResult.hitNormal());
                     Vector3i intBlockPos = new Vector3i((int) blockPos.x(), (int) blockPos.y(), (int) blockPos.z());
 
+                    world.placeBlock(intBlockPos, Blocks.SAND);
+
                     AbstractBlock block = world.getBlockAt(intBlockPos);
                     if(block != null)
                         block.onPlace(world, this, intBlockPos);
-
-                    world.placeBlock(intBlockPos, Blocks.COBBLESTONE);
                 }
                 if(mouse.getClick(Mouse.BUTTON_LEFT)) {
                     if(nearestBlock instanceof Block block && block.getBreakable() || !(nearestBlock instanceof Block)) {
                         Vector3i position = new Vector3i((int) nearestHitResult.hitObject().position.x(), (int) nearestHitResult.hitObject().position.y(), (int) nearestHitResult.hitObject().position.z());
+
                         AbstractBlock block = world.getBlockAt(position);
                         if(block != null)
                             block.onBreak(world, this, position);
-
                         world.removeBlock(position);
                     }
                 }

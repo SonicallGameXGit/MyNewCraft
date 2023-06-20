@@ -3,7 +3,6 @@ package org.mynewcraft.world.block;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
 import org.mynewcraft.MyNewCraft;
@@ -20,7 +19,6 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Random;
 
 public class AbstractBlock {
     protected final double[] TEXCOORD = new double[6];
@@ -28,7 +26,7 @@ public class AbstractBlock {
     protected final Identifier IDENTIFIER;
     protected final JsonObject JSON;
 
-    private static final ArrayList<AbstractBlock> blocks = new ArrayList<>();
+    protected static final ArrayList<AbstractBlock> blocks = new ArrayList<>();
 
     private final int index;
 
@@ -96,16 +94,6 @@ public class AbstractBlock {
             if(!block.getStatic()) {
                 world.removeBlock(positionAbove);
                 world.spawnEntity(new FallingBlockEntity(new CubeCollider(new Vector3d(positionAbove), new Vector3d(1.0)), blockAbove, 1.0));
-            }
-        }
-
-        for(int x = 0; x < 16; x++) {
-            for(int z = 0; z < 16; z++) {
-                for(int y = 0; y < 16; y++)
-                    if(new Vector3d(x, y, z).distance(new Vector3d()) <= 16)
-                        world.removeBlock(new Vector3i(position.x() - 8 + x, position.y() - 8 + y, position.z() - 8 + z));
-                if(new Vector2d(x, z).distance(new Vector2d()) <= 16)
-                    world.spawnEntity(new FallingBlockEntity(new CubeCollider(new Vector3d(position.x() - 8 + x, position.y() - 8 + 17, position.z() - 8 + z), new Vector3d(1.0)), AbstractBlock.getByIndex(new Random().nextInt(0, AbstractBlock.blocks.size())), 1.0));
             }
         }
     }

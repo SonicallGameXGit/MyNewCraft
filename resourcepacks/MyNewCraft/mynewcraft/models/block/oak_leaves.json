@@ -1,0 +1,9 @@
+{
+  "parent": "mynewcraft:block/cube_all",
+  "textures": {
+    "all": {
+      "id": "mynewcraft:block/oak_leaves",
+      "natural": true
+    }
+  }
+}

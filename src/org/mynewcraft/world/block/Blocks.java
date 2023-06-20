@@ -11,9 +11,11 @@ public class Blocks {
     public static final AbstractBlock COBBLESTONE = new AbstractBlock(new Identifier(MyNewCraft.GAME_ID, "cobblestone"));
 
     public static final Block SAND = new Block(new Identifier(MyNewCraft.GAME_ID, "sand"), new Block.Settings().notStatic());
+    public static final Block OAK_LOG = new Block(new Identifier(MyNewCraft.GAME_ID, "oak_log"), new Block.Settings());
     public static final Block GRAVEL = new Block(new Identifier(MyNewCraft.GAME_ID, "gravel"), new Block.Settings().notStatic());
-    public static final Block WATER = new Block(new Identifier(MyNewCraft.GAME_ID, "water"), new Block.Settings().unbreakable().replaceable().waterLike().ignoreRaycast().transparent(0.3));
+    public static final Block WATER = new Block(new Identifier(MyNewCraft.GAME_ID, "water"), new Block.Settings().unbreakable().replaceable().waterLike().ignoreRaycast().transparent(0.6));
     public static final Block BEDROCK = new Block(new Identifier(MyNewCraft.GAME_ID, "bedrock"), new Block.Settings().unbreakable());
+    public static final Block OAK_LEAVES = new Block(new Identifier(MyNewCraft.GAME_ID, "oak_leaves"), new Block.Settings().innerView());
 
     public static void register() {
         MyNewCraft.LOGGER.debug("Registering blocks!");

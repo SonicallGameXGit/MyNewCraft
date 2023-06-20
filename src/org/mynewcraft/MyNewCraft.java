@@ -51,7 +51,7 @@ public class MyNewCraft {
 
     public static final ArrayList<Chunk> meshesToUpdate = new ArrayList<>();
 
-    public static final int viewDistance = 30;
+    public static final int viewDistance = 40;
 
     public static boolean paused = false;
 

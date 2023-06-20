@@ -127,13 +127,31 @@ public class Chunk {
                         AbstractBlock block = Blocks.STONE;
                         if(i >= height - new Random(seed + ox * 392034L + oz * 3929340L).nextDouble(0.0, 6.0))
                             block = Blocks.DIRT;
-                        if(i == height - 1)
+                        if(i == height - 1) {
                             block = height <= SEA_LEVEL + 3.0 + (caveGenNoise.GetNoise(ox, oz) + 1.0) * 3.0 ? (caveGenNoise.GetNoise(ox + 3920.0f, oz - 323.3f) <= 0.3 ? Blocks.SAND : Blocks.GRAVEL) : Blocks.GRASS_BLOCK;
+                            if(height > SEA_LEVEL && new Random(seed + ox * 329840L + oz * 573293L).nextDouble(0, 100) >= 99.75) {
+                                for(int j = x - 2; j <= x + 2; j++) {
+                                    for(int k = z - 2; k <= z + 2; k++) {
+                                        for(int l = height + 3; l <= height + 6; l++) {
+                                            if(j != -1 && k != -1 && j != World.chunkScale && k != World.chunkScale)
+                                                blocks.put(new Vector3i(j, l, k), Blocks.OAK_LEAVES.getIndex());
+                                            else abstractOutline.put(new Vector3i(j, l, k), Blocks.OAK_LEAVES.getIndex());
+                                        }
+                                    }
+                                }
+                                for(int j = height; j <= height + 5; j++) {
+                                    if(notOutline) blocks.put(new Vector3i(x, j, z), Blocks.OAK_LOG.getIndex());
+                                    else abstractOutline.put(new Vector3i(x, j, z), Blocks.OAK_LEAVES.getIndex());
+                                }
+                            }
+                        }
                         if(height <= SEA_LEVEL) {
-                            for(int j = height; j <= SEA_LEVEL; j++)
+                            for(int j = height; j <= SEA_LEVEL; j++) {
                                 if(notOutline) blocks.put(new Vector3i(x, j, z), Blocks.WATER.getIndex());
                                 else abstractOutline.put(new Vector3i(x, j, z), Blocks.WATER.getIndex());
+                            }
                         }
+
 
                         if(notOutline) blocks.put(new Vector3i(x, i, z), block.getIndex());
                         else abstractOutline.put(new Vector3i(x, i, z), block.getIndex());
@@ -156,5 +174,12 @@ public class Chunk {
     }
     public boolean containsBlock(Vector3i coordinate) {
         return blocks.containsKey(coordinate) || abstractOutline.containsKey(coordinate);
+    }
+
+    public Integer getBlockAt(Vector3i coordinate) {
+        if(blocks.containsKey(coordinate)) return blocks.get(coordinate);
+        else if(abstractOutline.containsKey(coordinate)) return abstractOutline.get(coordinate);
+
+        return null;
     }
 }

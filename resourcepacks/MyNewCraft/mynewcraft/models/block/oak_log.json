@@ -1,0 +1,16 @@
+{
+  "parent": "mynewcraft:block/cube_all",
+  "textures": {
+    "all": {
+      "id": "mynewcraft:block/oak_log_side"
+    },
+    "top": {
+      "id": "mynewcraft:block/oak_log_top",
+      "natural": true
+    },
+    "bottom": {
+      "id": "mynewcraft:block/oak_log_top",
+      "natural": true
+    }
+  }
+}

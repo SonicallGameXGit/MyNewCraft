@@ -21,7 +21,7 @@ public class FallingBlockEntity extends AbstractEntity {
     private final double mass;
 
     private final AbstractBlock block;
-    private final Vector2d direction;
+    public final Vector2d direction;
 
     private final Mesh mesh;
 

@@ -51,7 +51,7 @@ public class ChunkMeshBuilder {
                     AbstractBlock block = AbstractBlock.getByIndex(blockId);
 
                     boolean faceCreated;
-                    if(block instanceof Block && ((Block) block).getTransparency() > 0.0)
+                    if(block instanceof Block && (((Block) block).getTransparency() > 0.0 || ((Block) block).getInnerView()))
                         faceCreated = buildFace(chunk, blocks, abstractOutline, vertexListA, texcoordListA, normalListA, alphaListA, aoLevelListA, tangentListA, x, y, z, block);
                     else faceCreated = buildFace(chunk, blocks, abstractOutline, vertexList, texcoordList, normalList, alphaList, aoLevelList, tangentList, x, y, z, block);
 
@@ -538,38 +538,38 @@ public class ChunkMeshBuilder {
         float[] levels = new float[4];
 
         float aoLevel = 0.0f;
-        if(chunk.containsBlock(new Vector3i(x, y - 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x, y - 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x - 1, y - 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x - 1, y - 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x - 1, y, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x - 1, y, z + (front ? 1 : -1))))
             aoLevel++;
         levels[0] = aoLevel;
 
         aoLevel = 0.0f;
-        if(chunk.containsBlock(new Vector3i(x, y - 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x, y - 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x + 1, y - 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x + 1, y - 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x + 1, y, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x + 1, y, z + (front ? 1 : -1))))
             aoLevel++;
         levels[1] = aoLevel;
 
         aoLevel = 0.0f;
-        if(chunk.containsBlock(new Vector3i(x, y + 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x, y + 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x + 1, y + 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x + 1, y + 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x + 1, y, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x + 1, y, z + (front ? 1 : -1))))
             aoLevel++;
         levels[2] = aoLevel;
 
         aoLevel = 0.0f;
-        if(chunk.containsBlock(new Vector3i(x, y + 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x, y + 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x - 1, y + 1, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x - 1, y + 1, z + (front ? 1 : -1))))
             aoLevel++;
-        if(chunk.containsBlock(new Vector3i(x - 1, y, z + (front ? 1 : -1))))
+        if(getAoBlockAt(chunk, new Vector3i(x - 1, y, z + (front ? 1 : -1))))
             aoLevel++;
         levels[3] = aoLevel;
 
@@ -604,9 +604,12 @@ public class ChunkMeshBuilder {
         if(neighbour != null) {
             if(neighbour instanceof Block neighbourB) {
                 if(block instanceof Block blockB)
-                    return blockB.getTransparency() <= 0.0 && neighbourB.getTransparency() > 0.0;
-                else return neighbourB.getTransparency() > 0.0;
+                    return (blockB.getTransparency() <= 0.0 && neighbourB.getTransparency() > 0.0) || neighbourB.getInnerView();
+                else return neighbourB.getTransparency() > 0.0 || neighbourB.getInnerView();
             } else return false;
         } else return true;
+    }
+    private static boolean getAoBlockAt(Chunk chunk, Vector3i offset) {
+        return chunk.containsBlock(offset) && (!(AbstractBlock.getByIndex(chunk.getBlockAt(offset)) instanceof Block) || ((Block) AbstractBlock.getByIndex(chunk.getBlockAt(offset))).getTransparency() <= 0.0);
     }
 }
